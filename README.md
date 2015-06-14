@@ -18,9 +18,11 @@ Quick Start
 -----------
 
 Build the project with
+
     $ make
 
 Run BFS on 1,000 vertices for 1 iteration
+
     $ ./bfs -g 10 -n 1
 
 Additional command line flags can be found with `-h`
