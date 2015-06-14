@@ -21,14 +21,14 @@ Graph Loading
 
 All of the binaries use the same command-line options for loading graphs.
 
-`-g 20` generates a SCALE=20 Kronecker graph (Graph500 specifications)
-`-u 20` generates a SCALE=20 uniform random graph (degree 16)
-`-f graph.el` loads graph from file graph.el
-`-sf` symmetrizes graph loaded from file graph.el 
+    * `-g 20` generates a SCALE=20 Kronecker graph (Graph500 specifications)
+    * `-u 20` generates a SCALE=20 uniform random graph (degree 16)
+    * `-f graph.el` loads graph from file graph.el
+    * `-sf` symmetrizes graph loaded from file graph.el 
 
 The graph loading infrastructure understands the following formats:
-`.el` plain-text edge-list with an edge per line as <node1> <node2>
-`.wel` plain-text weighted edge-list with an edge per line as <node1> <node2> <weight>
-`.gr` DIMACS Grand Challenge format
-`.sg` serialized pre-built graph (use converter to make)
-`.sg` weighted serialized pre-built graph (use converter to make)
+    * `.el` plain-text edge-list with an edge per line as <node1> <node2>
+    * `.wel` plain-text weighted edge-list with an edge per line as <node1> <node2> <weight>
+    * `.gr` DIMACS Grand Challenge format
+    * `.sg` serialized pre-built graph (use converter to make)
+    * `.sg` weighted serialized pre-built graph (use converter to make)
