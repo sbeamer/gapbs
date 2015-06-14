@@ -1,7 +1,17 @@
 GAP Benchmark Suite
 ===================
 
-This is a pre-release copy of the reference code for the upcoming GAP Benchmark Suite.
+This is a pre-release copy of the reference code for the upcoming [GAP](https://www.cs.berkeley.edu/~sbeamer/gap/) Benchmark Suite .
+
+
+Kernels Included
+----------------
++ Breadth-First Search (BFS)
++ Single-Source Shortest Paths (SSSP)
++ PageRank (PR)
++ Connected Components (CC)
++ Betweenness Centrality (BC)
++ Triangle Counting (TC)
 
 
 Quick Start
