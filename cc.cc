@@ -1,3 +1,5 @@
+// See LICENSE.txt for license details.
+
 #include <algorithm>
 #include <iostream>
 #include <unordered_map>
