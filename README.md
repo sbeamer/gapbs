@@ -1,8 +1,8 @@
+![GAP logo](www.cs.berkeley.edu/~sbeamer/gap/logo.svg)
 GAP Benchmark Suite
 ===================
 
-This is a pre-release copy of the reference code for the upcoming [GAP](https://www.cs.berkeley.edu/~sbeamer/gap/) Benchmark Suite .
-
+This is a pre-release copy of the reference code for the upcoming [GAP](https://www.cs.berkeley.edu/~sbeamer/gap/) Benchmark Suite. It is designed to be a portable high-performance baseline. It only requires a compiler with support for C++11 and OpenMP. If the compiler lacks OpenMP support, it will be compiled to run serially.
 
 Kernels Included
 ----------------
@@ -17,11 +17,15 @@ Kernels Included
 Quick Start
 -----------
 
-Build the project with
+Build the project:
 
     $ make
 
-Run BFS on 1,000 vertices for 1 iteration
+Override the default C++ compiler:
+
+    $ CXX=g++4.9 make
+
+Run BFS on 1,000 vertices for 1 iteration:
 
     $ ./bfs -g 10 -n 1
 
@@ -32,14 +36,22 @@ Graph Loading
 -------------
 
 All of the binaries use the same command-line options for loading graphs.
-+ `-g 20` generates a SCALE=20 Kronecker graph (Graph500 specifications)
-+ `-u 20` generates a SCALE=20 uniform random graph (degree 16)
++ `-g 20` generates a Kronecker graph with 2^20 vertices (Graph500 specifications)
++ `-u 20` generates a uniform random graph with 2^20 vertices (degree 16)
 + `-f graph.el` loads graph from file graph.el
-+ `-sf graph.el` symmetrizes graph loaded from file graph.el 
++ `-sf graph.el` symmetrizes graph loaded from file graph.el
 
 The graph loading infrastructure understands the following formats:
 + `.el` plain-text edge-list with an edge per line as <node1> <node2>
 + `.wel` plain-text weighted edge-list with an edge per line as <node1> <node2> <weight>
 + `.gr` DIMACS Grand Challenge format
-+ `.sg` serialized pre-built graph (use converter to make)
-+ `.sg` weighted serialized pre-built graph (use converter to make)
++ `.sg` serialized pre-built graph (use `converter` to make)
++ `.wsg` weighted serialized pre-built graph (use `converter` to make)
+
+
+Future Features
+---------------
+
++ Re-add support for verifying results of kernels
++ Ensure support for SunStudio compiler on SPARC
++ Scripts to perform official benchmark runs
