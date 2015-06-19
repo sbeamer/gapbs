@@ -1,8 +1,7 @@
-![GAP logo](www.cs.berkeley.edu/~sbeamer/gap/logo.svg)
 GAP Benchmark Suite
 ===================
 
-This is a pre-release copy of the reference code for the upcoming [GAP](https://www.cs.berkeley.edu/~sbeamer/gap/) Benchmark Suite. It is designed to be a portable high-performance baseline. It only requires a compiler with support for C++11 and OpenMP. If the compiler lacks OpenMP support, it will be compiled to run serially.
+This is a pre-release copy of the reference code for the upcoming [GAP](https://www.cs.berkeley.edu/~sbeamer/gap/) Benchmark Suite. It is designed to be a portable high-performance baseline. It only requires a compiler with support for C++11. For parallelism it uses OpenMP, but if the compiler lacks OpenMP support, it will be compiled to run serially.
 
 Kernels Included
 ----------------
@@ -35,7 +34,7 @@ Additional command line flags can be found with `-h`
 Graph Loading
 -------------
 
-All of the binaries use the same command-line options for loading graphs.
+All of the binaries use the same command-line options for loading graphs:
 + `-g 20` generates a Kronecker graph with 2^20 vertices (Graph500 specifications)
 + `-u 20` generates a uniform random graph with 2^20 vertices (degree 16)
 + `-f graph.el` loads graph from file graph.el
@@ -53,5 +52,6 @@ Future Features
 ---------------
 
 + Re-add support for verifying results of kernels
++ Release integration support for OpenTuner
 + Ensure support for SunStudio compiler on SPARC
 + Scripts to perform official benchmark runs
