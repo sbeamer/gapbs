@@ -85,6 +85,6 @@ int main(int argc, char* argv[]) {
     return -1;
   Builder b(cli);
   Graph g = b.MakeGraph();
-  BenchmarkFunc(cli, g, Hybrid, PrintTriangleStats);
+  BenchmarkFunc(cli, g, OrderedCount, PrintTriangleStats);
   return 0;
 }
