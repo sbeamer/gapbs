@@ -46,7 +46,7 @@ class Bitmap {
     do {
       old_val = *loc;
       new_val = old_val | ((uint64_t) 1l << bit_offset(pos));
-    } while (!compare_and_swap(loc, old_val, new_val));
+    } while (!compare_and_swap(*loc, old_val, new_val));
   }
 
   bool get_bit(size_t pos) {
