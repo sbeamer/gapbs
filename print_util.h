@@ -16,16 +16,16 @@ void PrintTime(const std::string &s, double seconds) {
 
 void PrintStep(int step, double seconds, int64_t count=-1) {
   if (count != -1)
-    printf("%5d%11ld  %10.5lf\n", step, count, seconds);
+    printf("%5d%11lld  %10.5lf\n", step, count, seconds);
   else
-    printf("%5d%20.5lf\n", step, seconds);
+    printf("%5d%23.5lf\n", step, seconds);
 }
 
 void PrintStep(const std::string &s, double seconds, int64_t count=-1) {
   if (count != -1)
-    printf("%5s%11ld  %10.5lf\n", s.c_str(), count, seconds);
+    printf("%5s%11lld  %10.5lf\n", s.c_str(), count, seconds);
   else
-    printf("%5s%20.5lf\n", s.c_str(), seconds);
+    printf("%5s%23.5lf\n", s.c_str(), seconds);
 }
 
 
