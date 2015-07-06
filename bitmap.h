@@ -1,4 +1,5 @@
-// See LICENSE.txt for license details.
+// Copyright (c) 2015, The Regents of the University of California (Regents)
+// See LICENSE.txt for license details
 
 #ifndef BITMAP_H_
 #define BITMAP_H_
