@@ -16,15 +16,15 @@
 #include "pvector.h"
 
 
-template <typename NodeID_, typename DestID_=NodeID_,
-          typename WeightT_=NodeID_, bool invert=true>
+template <typename NodeID_, typename DestID_ = NodeID_,
+          typename WeightT_ = NodeID_, bool invert = true>
 class Reader {
   typedef EdgePair<NodeID_, DestID_> Edge;
   typedef pvector<Edge> EdgeList;
   std::string filename_;
 
  public:
-  Reader(std::string filename) : filename_(filename) {}
+  explicit Reader(std::string filename) : filename_(filename) {}
 
   std::string GetSuffix() {
     std::size_t suff_pos = filename_.rfind('.');
@@ -126,8 +126,8 @@ class Reader {
     t.Start();
     bool directed;
     SGOffset num_nodes, num_edges;
-    DestID_ **index=nullptr, **inv_index=nullptr;
-    DestID_ *neighs=nullptr, *inv_neighs=nullptr;
+    DestID_ **index = nullptr, **inv_index = nullptr;
+    DestID_ *neighs = nullptr, *inv_neighs = nullptr;
     file.read(reinterpret_cast<char*>(&directed), sizeof(bool));
     file.read(reinterpret_cast<char*>(&num_edges), sizeof(SGOffset));
     file.read(reinterpret_cast<char*>(&num_nodes), sizeof(SGOffset));

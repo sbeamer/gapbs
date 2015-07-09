@@ -5,34 +5,35 @@
 #define BUILDER_H_
 
 #include <algorithm>
-#include <functional>
+#include <cinttypes>
 #include <fstream>
+#include <functional>
 #include <type_traits>
 #include <utility>
 
 #include "command_line.h"
 #include "generator.h"
 #include "graph.h"
-#include "print_util.h"
 #include "platform_atomics.h"
+#include "print_util.h"
 #include "pvector.h"
 #include "reader.h"
 #include "timer.h"
 
 
-template <typename NodeID_, typename DestID_=NodeID_,
-          typename WeightT_=NodeID_, bool invert=true>
+template <typename NodeID_, typename DestID_ = NodeID_,
+          typename WeightT_ = NodeID_, bool invert = true>
 class BuilderBase {
   typedef EdgePair<NodeID_, DestID_> Edge;
   typedef pvector<Edge> EdgeList;
 
-  CLBase &cli_;
+  const CLBase &cli_;
   bool symmetrize_;
   bool needs_weights_;
-  long num_nodes_ = -1;
+  int64_t num_nodes_ = -1;
 
  public:
-  BuilderBase(CLBase &cli) : cli_(cli) {
+  explicit BuilderBase(const CLBase &cli) : cli_(cli) {
     symmetrize_ = cli_.symmetrize();
     needs_weights_ = !std::is_same<NodeID_, DestID_>::value;
   }
@@ -45,7 +46,7 @@ class BuilderBase {
     return NodeWeight<NodeID_, WeightT_>(e.u, e.v.w);
   }
 
-  NodeID_ FindMaxNodeID(EdgeList &el) {
+  NodeID_ FindMaxNodeID(const EdgeList &el) {
     NodeID_ max_seen = 0;
     #pragma omp parallel for reduction(max : max_seen)
     for (auto it = el.begin(); it < el.end(); it++) {
@@ -56,7 +57,7 @@ class BuilderBase {
     return max_seen;
   }
 
-  pvector<NodeID_> CountDegrees(EdgeList &el, bool transpose) {
+  pvector<NodeID_> CountDegrees(const EdgeList &el, bool transpose) {
     pvector<NodeID_> degrees(num_nodes_, 0);
     #pragma omp parallel for
     for (auto it = el.begin(); it < el.end(); it++) {
@@ -70,7 +71,7 @@ class BuilderBase {
   }
 
   static
-  pvector<SGOffset> PrefixSum(pvector<NodeID_> &degrees) {
+  pvector<SGOffset> PrefixSum(const pvector<NodeID_> &degrees) {
     pvector<SGOffset> sums(degrees.size() + 1);
     SGOffset total = 0;
     for (NodeID_ n=0; n < degrees.size(); n++) {
@@ -82,13 +83,13 @@ class BuilderBase {
   }
 
   static
-  pvector<SGOffset> ParallelPrefixSum(pvector<NodeID_> &degrees) {
+  pvector<SGOffset> ParallelPrefixSum(const pvector<NodeID_> &degrees) {
     const size_t block_size = 1<<20;
     const size_t num_blocks = (degrees.size() + block_size - 1) / block_size;
     pvector<SGOffset> local_sums(num_blocks);
     #pragma omp parallel for
     for (size_t block=0; block < num_blocks; block++) {
-      SGOffset lsum=0;
+      SGOffset lsum = 0;
       size_t block_end = std::min((block + 1) * block_size, degrees.size());
       for (size_t i=block * block_size; i < block_end; i++)
         lsum += degrees[i];
@@ -96,14 +97,14 @@ class BuilderBase {
     }
     pvector<SGOffset> bulk_prefix(num_blocks+1);
     SGOffset total = 0;
-    for (size_t block=0; block<num_blocks; block++) {
+    for (size_t block=0; block < num_blocks; block++) {
       bulk_prefix[block] = total;
       total += local_sums[block];
     }
     bulk_prefix[num_blocks] = total;
     pvector<SGOffset> prefix(degrees.size() + 1);
     #pragma omp parallel for
-    for (size_t block=0; block<num_blocks; block++) {
+    for (size_t block=0; block < num_blocks; block++) {
       SGOffset local_total = bulk_prefix[block];
       size_t block_end = std::min((block + 1) * block_size, degrees.size());
       for (size_t i=block * block_size; i < block_end; i++) {
@@ -115,8 +116,8 @@ class BuilderBase {
     return prefix;
   }
 
-  void SquishCSR(CSRGraph<NodeID_, DestID_, invert> &g, bool transpose,
-                 DestID_** &sq_index, DestID_* &sq_neighs) {
+  void SquishCSR(const CSRGraph<NodeID_, DestID_, invert> &g, bool transpose,
+                 DestID_*** sq_index, DestID_** sq_neighs) {
     pvector<NodeID_> diffs(g.num_nodes());
     DestID_ *n_start, *n_end;
     #pragma omp parallel for private(n_start, n_end)
@@ -134,25 +135,25 @@ class BuilderBase {
       diffs[n] = new_end - n_start;
     }
     pvector<SGOffset> sq_offsets = ParallelPrefixSum(diffs);
-    sq_neighs = new DestID_[sq_offsets[g.num_nodes()]];
-    sq_index = CSRGraph<NodeID_, DestID_>::GenIndex(sq_offsets, sq_neighs);
+    *sq_neighs = new DestID_[sq_offsets[g.num_nodes()]];
+    *sq_index = CSRGraph<NodeID_, DestID_>::GenIndex(sq_offsets, *sq_neighs);
     #pragma omp parallel for private(n_start)
     for (NodeID_ n=0; n < g.num_nodes(); n++) {
       if (transpose)
         n_start = g.in_neigh(n).begin();
       else
         n_start = g.out_neigh(n).begin();
-      std::copy(n_start, n_start+diffs[n], sq_index[n]);
+      std::copy(n_start, n_start+diffs[n], (*sq_index)[n]);
     }
   }
 
   CSRGraph<NodeID_, DestID_, invert> SquishGraph(
-      CSRGraph<NodeID_, DestID_, invert> &g) {
+      const CSRGraph<NodeID_, DestID_, invert> &g) {
     DestID_ **out_index, *out_neighs, **in_index, *in_neighs;
-    SquishCSR(g, false, out_index, out_neighs);
+    SquishCSR(g, false, &out_index, &out_neighs);
     if (g.directed()) {
       if (invert)
-        SquishCSR(g, true, in_index, in_neighs);
+        SquishCSR(g, true, &in_index, &in_neighs);
       return CSRGraph<NodeID_, DestID_, invert>(g.num_nodes(), out_index,
                                                 out_neighs, in_index,
                                                 in_neighs);
@@ -162,35 +163,35 @@ class BuilderBase {
     }
   }
 
-  void MakeCSR(EdgeList &el, bool transpose, DestID_** &index,
-               DestID_* &neighs) {
+  void MakeCSR(const EdgeList &el, bool transpose, DestID_*** index,
+               DestID_** neighs) {
     pvector<NodeID_> degrees = CountDegrees(el, transpose);
     pvector<SGOffset> offsets = ParallelPrefixSum(degrees);
-    neighs = new DestID_[offsets[num_nodes_]];
-    index = CSRGraph<NodeID_, DestID_>::GenIndex(offsets, neighs);
+    *neighs = new DestID_[offsets[num_nodes_]];
+    *index = CSRGraph<NodeID_, DestID_>::GenIndex(offsets, *neighs);
     #pragma omp parallel for
     for (auto it = el.begin(); it < el.end(); it++) {
       Edge e = *it;
       if (symmetrize_ || (!symmetrize_ && !transpose))
-        neighs[fetch_and_add(offsets[e.u],1)] = e.v;
+        (*neighs)[fetch_and_add(offsets[e.u], 1)] = e.v;
       if (symmetrize_ || (!symmetrize_ && transpose))
-        neighs[fetch_and_add(offsets[static_cast<NodeID_>(e.v)], 1)] =
+        (*neighs)[fetch_and_add(offsets[static_cast<NodeID_>(e.v)], 1)] =
             GetSource(e);
     }
   }
 
   CSRGraph<NodeID_, DestID_, invert> MakeGraphFromEL(EdgeList &el) {
-    DestID_ **index=nullptr, **inv_index=nullptr;
-    DestID_ *neighs=nullptr, *inv_neighs=nullptr;
+    DestID_ **index = nullptr, **inv_index = nullptr;
+    DestID_ *neighs = nullptr, *inv_neighs = nullptr;
     Timer t;
     t.Start();
     if (num_nodes_ == -1)
       num_nodes_ = FindMaxNodeID(el)+1;
     if (needs_weights_)
       Generator<NodeID_, DestID_, WeightT_>::InsertWeights(el);
-    MakeCSR(el, false, index, neighs);
+    MakeCSR(el, false, &index, &neighs);
     if (!symmetrize_ && invert)
-      MakeCSR(el, true, inv_index, inv_neighs);
+      MakeCSR(el, true, &inv_index, &inv_neighs);
     t.Stop();
     PrintTime("Build Time", t.Seconds());
     if (symmetrize_)
@@ -202,7 +203,7 @@ class BuilderBase {
 
   CSRGraph<NodeID_, DestID_, invert> MakeGraph() {
     CSRGraph<NodeID_, DestID_, invert> g;
-    {
+    {  // extra scope to trigger earlier deletion of el (save memory)
       EdgeList el;
       if (cli_.filename() != "") {
         Reader<NodeID_, DestID_, WeightT_, invert> r(cli_.filename());
@@ -229,7 +230,7 @@ class BuilderBase {
     }
     Timer t;
     t.Start();
-    typedef std::pair<long, NodeID_> degree_node_p;
+    typedef std::pair<int64_t, NodeID_> degree_node_p;
     pvector<degree_node_p> degree_id_pairs(g.num_nodes());
     #pragma omp parallel for
     for (NodeID_ n=0; n < g.num_nodes(); n++)
@@ -257,12 +258,5 @@ class BuilderBase {
     return CSRGraph<NodeID_, DestID_, invert>(g.num_nodes(), index, neighs);
   }
 };
-//
-// template <typename NodeID_, bool invert=true>
-// using Builder = BuilderBase<NodeID_, NodeID_, NodeID_, invert>;
-//
-// template <typename NodeID_, typename WeightT_=NodeID_, bool invert=true>
-// using WeightedBuilder = BuilderBase<NodeID_, NodeWeight<NodeID_,WeightT_>,
-//                                     WeightT_, invert>;
 
 #endif  // BUILDER_H_

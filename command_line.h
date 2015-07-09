@@ -30,9 +30,9 @@ class CLBase {
   bool uniform_ = false;
 
   void AddHelpLine(char opt, std::string opt_arg, std::string text,
-                   std::string def="") {
-    const int buf_len = 100;
-    char buf[buf_len];
+                   std::string def = "") {
+    const int kBufLen = 100;
+    char buf[kBufLen];
     if (opt_arg != "")
       opt_arg = "<" + opt_arg + ">";
     if (def != "")
@@ -43,7 +43,7 @@ class CLBase {
   }
 
  public:
-  CLBase(int argc, char** argv, std::string name="") :
+  CLBase(int argc, char** argv, std::string name = "") :
          argc_(argc), argv_(argv), name_(name) {
     AddHelpLine('h', "", "print this help message");
     AddHelpLine('f', "file", "load graph from file");
@@ -55,7 +55,7 @@ class CLBase {
   bool ParseArgs() {
     signed char c_opt;
     extern char *optarg;          // from and for getopt
-    while((c_opt = getopt(argc_, argv_, get_args_.c_str())) != -1) {
+    while ((c_opt = getopt(argc_, argv_, get_args_.c_str())) != -1) {
       HandleArg(c_opt, optarg);
     }
     if ((filename_ == "") && (scale_ == -1)) {
@@ -85,10 +85,10 @@ class CLBase {
     ok_to_continue_ = false;
   }
 
-  int scale() { return scale_; }
-  std::string filename() { return filename_; }
-  bool symmetrize() { return symmetrize_; }
-  bool uniform() { return uniform_; }
+  int scale() const { return scale_; }
+  std::string filename() const { return filename_; }
+  bool symmetrize() const { return symmetrize_; }
+  bool uniform() const { return uniform_; }
 };
 
 
@@ -117,9 +117,9 @@ class CLApp : public CLBase {
     }
   }
 
-  bool do_analysis() { return do_analysis_; }
-  int num_trials() { return num_trials_; }
-  int64_t start_vertex() { return start_vertex_; }
+  bool do_analysis() const { return do_analysis_; }
+  int num_trials() const { return num_trials_; }
+  int64_t start_vertex() const { return start_vertex_; }
 };
 
 
@@ -143,7 +143,7 @@ class CLIterApp : public CLApp {
     }
   }
 
-  int num_iters() { return num_iters_; }
+  int num_iters() const { return num_iters_; }
 };
 
 
@@ -166,7 +166,7 @@ class CLDelta : public CLApp {
     }
   }
 
-  int delta() { return delta_; }
+  int delta() const { return delta_; }
 };
 
 
@@ -188,18 +188,17 @@ class CLConvert : public CLBase {
 
   void HandleArg(signed char opt, char* opt_arg) override {
     switch (opt) {
-      case 'b': out_sg_=true; out_filename_=std::string(opt_arg);   break;
-      case 'e': out_el_=true; out_filename_=std::string(opt_arg);   break;
+      case 'b': out_sg_ = true; out_filename_ = std::string(opt_arg);   break;
+      case 'e': out_el_ = true; out_filename_ = std::string(opt_arg);   break;
       case 'w': out_weighted_ = true;                               break;
       default: CLBase::HandleArg(opt, opt_arg);
     }
   }
 
-  std::string out_filename() { return out_filename_; }
-  bool out_weighted() { return out_weighted_; }
-  bool out_el() { return out_el_; }
-  bool out_sg() { return out_sg_; }
+  std::string out_filename() const { return out_filename_; }
+  bool out_weighted() const { return out_weighted_; }
+  bool out_el() const { return out_el_; }
+  bool out_sg() const { return out_sg_; }
 };
-
 
 #endif  // COMMAND_LINE_H_

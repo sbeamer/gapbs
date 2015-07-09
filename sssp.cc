@@ -2,14 +2,12 @@
 // See LICENSE.txt for license details
 
 #include <algorithm>
+#include <cinttypes>
 #include <limits>
 #include <iomanip>
 #include <iostream>
-#include <queue>
-#include <string>
 #include <unordered_map>
 #include <utility>
-#include <random>
 #include <vector>
 
 #include "benchmark.h"
@@ -27,7 +25,7 @@ const WeightT kDistInf = numeric_limits<WeightT>::max()/2;
 
 
 // reduces barriers down to 2
-pvector<WeightT> DeltaStep(WGraph &g, NodeID source, WeightT delta) {
+pvector<WeightT> DeltaStep(const WGraph &g, NodeID source, WeightT delta) {
   Timer t;
   pvector<WeightT> dist(g.num_nodes(), kDistInf);
   dist[source] = 0;
@@ -35,7 +33,7 @@ pvector<WeightT> DeltaStep(WGraph &g, NodeID source, WeightT delta) {
   Bucket<NodeID> shared_bins[2];
   size_t shared_indexes[2] = {0, kDistInf};
   shared_bins[0].push_back(source);
-  long num_checks = 0;
+  int64_t num_checks = 0;
   t.Start();
   #pragma omp parallel reduction(+ : num_checks)
   {
@@ -99,9 +97,9 @@ pvector<WeightT> DeltaStep(WGraph &g, NodeID source, WeightT delta) {
 }
 
 
-void PrintSSSPStats(WGraph &g, pvector<WeightT> &dist) {
+void PrintSSSPStats(const WGraph &g, const pvector<WeightT> &dist) {
   auto NotInf = [](WeightT d) { return d != kDistInf; };
-  long num_reached = count_if(dist.begin(), dist.end(), NotInf);
+  int64_t num_reached = count_if(dist.begin(), dist.end(), NotInf);
   cout << "SSSP Tree reaches " << num_reached << " nodes" << endl;
 }
 
@@ -113,9 +111,9 @@ int main(int argc, char* argv[]) {
   WeightedBuilder b(cli);
   WGraph g = b.MakeGraph();
   SourcePicker<WGraph> sp(g, cli.start_vertex());
-  auto SSSPBound = [&sp, &cli] (WGraph &g) {
+  auto SSSPBound = [&sp, &cli] (const WGraph &g) {
     return DeltaStep(g, sp.PickNext(), cli.delta());
   };
-  BenchmarkFunc(cli, g, SSSPBound, PrintSSSPStats);
+  BenchmarkKernel(cli, g, SSSPBound, PrintSSSPStats);
   return 0;
 }

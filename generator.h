@@ -13,7 +13,8 @@
 #include "pvector.h"
 
 
-template <typename NodeID_, typename DestID_=NodeID_, typename WeightT_=NodeID_>
+template <typename NodeID_, typename DestID_ = NodeID_,
+          typename WeightT_ = NodeID_>
 class Generator {
   typedef EdgePair<NodeID_, DestID_> Edge;
   typedef EdgePair<NodeID_, NodeWeight<NodeID_, WeightT_>> WEdge;
@@ -34,7 +35,7 @@ class Generator {
       permutation[n] = n;
     shuffle(permutation.begin(), permutation.end(), rng);
     #pragma omp parallel for
-    for (long e=0; e < num_edges_; e++)
+    for (int64_t e=0; e < num_edges_; e++)
       el[e] = Edge(permutation[el[e].u], permutation[el[e].v]);
   }
 
@@ -45,9 +46,9 @@ class Generator {
       std::mt19937 rng;
       std::uniform_int_distribution<NodeID_> udist(0, num_nodes_-1);
       #pragma omp for
-      for (long block=0; block < num_edges_; block+=block_size) {
+      for (int64_t block=0; block < num_edges_; block+=block_size) {
         rng.seed(base_seed + block/block_size);
-        for (long e=block; e < std::min(block+block_size, num_edges_); e++) {
+        for (int64_t e=block; e < std::min(block+block_size, num_edges_); e++) {
           el[e] = Edge(udist(rng), udist(rng));
         }
       }
@@ -56,17 +57,17 @@ class Generator {
   }
 
   EdgeList MakeKronEL() {
-    const float A=0.57, B=0.19, C=0.19;
+    const float A = 0.57, B = 0.19, C = 0.19;
     EdgeList el(num_edges_);
     #pragma omp parallel
     {
       std::mt19937 rng;
       std::uniform_real_distribution<float> udist(0, 1.0);
       #pragma omp for
-      for (long block=0; block < num_edges_; block+=block_size) {
+      for (int64_t block=0; block < num_edges_; block+=block_size) {
         rng.seed(base_seed + block/block_size);
-        for (long e=block; e < std::min(block+block_size, num_edges_); e++) {
-          NodeID_ src=0, dst=0;
+        for (int64_t e=block; e < std::min(block+block_size, num_edges_); e++) {
+          NodeID_ src = 0, dst = 0;
           for (int depth=0; depth < scale_; depth++) {
             double rand_point = udist(rng);
             src = src << 1;
@@ -111,10 +112,11 @@ class Generator {
     {
       std::mt19937 rng;
       std::uniform_int_distribution<WeightT_> udist(1, 255);
+      int64_t el_size = el.size();
       #pragma omp for
-      for (size_t block=0; block < el.size(); block+=block_size) {
+      for (int64_t block=0; block < el_size; block+=block_size) {
         rng.seed(base_seed + block/block_size);
-        for (size_t e=block; e < std::min(block+block_size, el.size()); e++) {
+        for (int64_t e=block; e < std::min(block+block_size, el_size); e++) {
           el[e].v.w = udist(rng);
         }
       }
@@ -123,10 +125,10 @@ class Generator {
 
  private:
   int scale_;
-  long num_nodes_;
-  long num_edges_;
+  int64_t num_nodes_;
+  int64_t num_edges_;
   static const NodeID_ base_seed = 8;
-  static const long block_size = 1<<18;
+  static const int64_t block_size = 1<<18;
 };
 
 #endif  // GENERATOR_H_

@@ -54,7 +54,7 @@ std::istream& operator>>(std::istream& is, NodeWeight<NodeID_, WeightT_>& nw) {
 
 
 
-template <typename SrcT, typename DstT=SrcT>
+template <typename SrcT, typename DstT = SrcT>
 struct EdgePair {
   SrcT u;
   DstT v;
@@ -70,7 +70,7 @@ typedef int64_t SGOffset;
 
 
 
-template <class NodeID_, class DestID_=NodeID_, bool MakeInverse=true>
+template <class NodeID_, class DestID_ = NodeID_, bool MakeInverse = true>
 class CSRGraph {
   class Neighborhood {
     NodeID_ n_;
@@ -101,16 +101,16 @@ class CSRGraph {
     out_index_(nullptr), out_neighbors_(nullptr),
     in_index_(nullptr), in_neighbors_(nullptr) {}
 
-  CSRGraph(long num_nodes, DestID_** index, DestID_* neighs) :
+  CSRGraph(int64_t num_nodes, DestID_** index, DestID_* neighs) :
     directed_(false), num_nodes_(num_nodes),
     out_index_(index), out_neighbors_(neighs),
     in_index_(index), in_neighbors_(neighs) {
       num_edges_ = (out_index_[num_nodes_] - out_index_[0]) / 2;
     }
 
-  CSRGraph(long nodes, DestID_** out_index, DestID_* out_neighs,
+  CSRGraph(int64_t num_nodes, DestID_** out_index, DestID_* out_neighs,
         DestID_** in_index, DestID_* in_neighs) :
-    directed_(true), num_nodes_(nodes),
+    directed_(true), num_nodes_(num_nodes),
     out_index_(out_index), out_neighbors_(out_neighs),
     in_index_(in_index), in_neighbors_(in_neighs) {
       num_edges_ = out_index_[num_nodes_] - out_index_[0];
@@ -156,23 +156,23 @@ class CSRGraph {
     return directed_;
   }
 
-  long num_nodes() const {
+  int64_t num_nodes() const {
     return num_nodes_;
   }
 
-  long num_edges() const {
+  int64_t num_edges() const {
     return num_edges_;
   }
 
-  long num_edges_directed() const {
+  int64_t num_edges_directed() const {
     return directed_ ? num_edges_ : 2*num_edges_;
   }
 
-  long out_degree(NodeID_ v) const {
+  int64_t out_degree(NodeID_ v) const {
     return out_index_[v+1] - out_index_[v];
   }
 
-  long in_degree(NodeID_ v) const {
+  int64_t in_degree(NodeID_ v) const {
     return in_index_[v+1] - in_index_[v];
   }
 
@@ -204,7 +204,7 @@ class CSRGraph {
     }
   }
 
-  static DestID_** GenIndex(pvector<SGOffset> &offsets, DestID_* neighs) {
+  static DestID_** GenIndex(const pvector<SGOffset> &offsets, DestID_* neighs) {
     NodeID_ length = offsets.size();
     DestID_** index = new DestID_*[length];
     #pragma omp parallel for
@@ -213,7 +213,7 @@ class CSRGraph {
     return index;
   }
 
-  pvector<SGOffset> VertexOffsets(bool in_graph=false) {
+  pvector<SGOffset> VertexOffsets(bool in_graph = false) const {
     pvector<SGOffset> offsets(num_nodes_+1);
     for (NodeID_ n=0; n < num_nodes_+1; n++)
       if (in_graph)
@@ -225,13 +225,12 @@ class CSRGraph {
 
  private:
   bool directed_;
-  long num_nodes_;
-  long num_edges_;
+  int64_t num_nodes_;
+  int64_t num_edges_;
   DestID_** out_index_;
   DestID_*  out_neighbors_;
   DestID_** in_index_;
   DestID_*  in_neighbors_;
 };
-
 
 #endif  // GRAPH_H_

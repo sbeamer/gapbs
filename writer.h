@@ -14,10 +14,10 @@
 #include "graph.h"
 
 
-template <typename NodeID_, typename DestID_=NodeID_>
+template <typename NodeID_, typename DestID_ = NodeID_>
 class WriterBase {
  public:
-  WriterBase(CSRGraph<NodeID_, DestID_> &g) : g_(g) {}
+  explicit WriterBase(CSRGraph<NodeID_, DestID_> &g) : g_(g) {}
 
   void WriteEL(std::fstream &out) {
     for (NodeID_ u=0; u < g_.num_nodes(); u++) {
@@ -58,7 +58,7 @@ class WriterBase {
     }
   }
 
-  void WriteGraph(std::string filename, bool serialized=false) {
+  void WriteGraph(std::string filename, bool serialized = false) {
     if (filename == "") {
       std::cout << "No output filename given (Use -h for help)" << std::endl;
       std::exit(-8);

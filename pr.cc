@@ -3,7 +3,6 @@
 
 #include <algorithm>
 #include <iostream>
-#include <math.h>
 #include <vector>
 
 #include "benchmark.h"
@@ -18,7 +17,7 @@ using namespace std;
 typedef float ScoreT;
 const float kDamp = 0.85;
 
-pvector<ScoreT> PageRankPull(Graph &g, int num_iterations) {
+pvector<ScoreT> PageRankPull(const Graph &g, int num_iterations) {
   const ScoreT init_score = 1.0f / g.num_nodes();
   const ScoreT base_score = (1.0f - kDamp) / g.num_nodes();
   pvector<ScoreT> scores(g.num_nodes(), init_score);
@@ -42,7 +41,7 @@ pvector<ScoreT> PageRankPull(Graph &g, int num_iterations) {
   return scores;
 }
 
-void PrintTopScores(Graph &g, pvector<ScoreT> &scores) {
+void PrintTopScores(const Graph &g, const pvector<ScoreT> &scores) {
   vector<pair<NodeID, ScoreT>> score_pairs(g.num_nodes());
   for (NodeID n=0; n < g.num_nodes(); n++) {
     score_pairs[n] = make_pair(n, scores[n]);
@@ -60,7 +59,9 @@ int main(int argc, char* argv[]) {
     return -1;
   Builder b(cli);
   Graph g = b.MakeGraph();
-  auto PRBound = [&cli] (Graph &g) { return PageRankPull(g, cli.num_iters()); };
-  BenchmarkFunc(cli, g, PRBound, PrintTopScores);
+  auto PRBound = [&cli] (const Graph &g) {
+    return PageRankPull(g, cli.num_iters());
+  };
+  BenchmarkKernel(cli, g, PRBound, PrintTopScores);
   return 0;
 }

@@ -20,18 +20,18 @@ using namespace std;
 typedef float ScoreT;
 
 
-void BFS(Graph &g, NodeID source, pvector<NodeID> &path_counts,
+void BFS(const Graph &g, NodeID source, pvector<NodeID> &path_counts,
     pvector<NodeID> &succ, pvector<SGOffset> &succ_tails,
     vector<SlidingQueue<NodeID>::iterator> &depth_index,
     SlidingQueue<NodeID> &queue) {
   pvector<NodeID> depths(g.num_nodes(), -1);
   depths[source] = 0;
   path_counts[source] = 1;
-  queue.Push(source);
+  queue.push_back(source);
   depth_index.push_back(queue.begin());
-  queue.SlideWindow();
+  queue.slide_window();
   int depth = 0;
-  while (!queue.Empty()) {
+  while (!queue.empty()) {
     depth_index.push_back(queue.begin());
     depth++;
     #pragma omp parallel for
@@ -39,7 +39,7 @@ void BFS(Graph &g, NodeID source, pvector<NodeID> &path_counts,
       NodeID u = *q_iter;
       for (NodeID v : g.out_neigh(u)) {
         if ((depths[v] == -1) && (compare_and_swap(depths[v], -1, depth))) {
-          queue.Push(v);
+          queue.push_back(v);
         }
         if (depths[v] == depth) {
           succ[fetch_and_add(succ_tails[u], 1)] = v;
@@ -47,13 +47,13 @@ void BFS(Graph &g, NodeID source, pvector<NodeID> &path_counts,
         }
       }
     }
-    queue.SlideWindow();
+    queue.slide_window();
   }
   depth_index.push_back(queue.begin());
 }
 
 
-pvector<ScoreT> Brandes(Graph &g, NodeID source, NodeID num_iters) {
+pvector<ScoreT> Brandes(const Graph &g, NodeID source, NodeID num_iters) {
   cout << "source: " << source << endl;
   Timer t;
   t.Start();
@@ -69,7 +69,7 @@ pvector<ScoreT> Brandes(Graph &g, NodeID source, NodeID num_iters) {
   for (NodeID iter=0; iter < num_iters; iter++) {
     path_counts.fill(0);
     depth_index.resize(0);
-    queue.Reset();
+    queue.reset();
     t.Start();
     BFS(g, source, path_counts, succ, succ_tails, depth_index, queue);
     t.Stop();
@@ -121,8 +121,8 @@ int main(int argc, char* argv[]) {
   Graph g = b.MakeGraph();
   SourcePicker<Graph> sp(g, cli.start_vertex());
   auto BCBound =
-    [&sp, &cli] (Graph &g) { return Brandes(g, sp.PickNext(),
-                                            cli.num_iters()); };
-  BenchmarkFunc(cli, g, BCBound, PrintTopScores);
+    [&sp, &cli] (const Graph &g) { return Brandes(g, sp.PickNext(),
+                                                  cli.num_iters()); };
+  BenchmarkKernel(cli, g, BCBound, PrintTopScores);
   return 0;
 }

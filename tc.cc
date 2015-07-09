@@ -52,7 +52,7 @@ bool WorthRelabelling(const Graph &g) {
   if (average_degree < 10)
     return false;
   SourcePicker<Graph> sp(g);
-  int64_t num_samples = min(1000l, g.num_nodes());
+  int64_t num_samples = min(int64_t(1000), g.num_nodes());
   int64_t sample_total = 0;
   pvector<int64_t> samples(num_samples);
   for (int64_t trial=0; trial < num_samples; trial++) {
@@ -86,6 +86,6 @@ int main(int argc, char* argv[]) {
     return -1;
   Builder b(cli);
   Graph g = b.MakeGraph();
-  BenchmarkFunc(cli, g, Hybrid, PrintTriangleStats);
+  BenchmarkKernel(cli, g, Hybrid, PrintTriangleStats);
   return 0;
 }

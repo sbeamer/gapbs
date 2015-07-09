@@ -23,7 +23,7 @@ class pvector {
 
   pvector() : start_(nullptr), end_size_(nullptr), end_capacity_(nullptr) {}
 
-  pvector(size_t num_elements) {
+  explicit pvector(size_t num_elements) {
     start_ = new T_[num_elements];
     end_size_ = start_ + num_elements;
     end_capacity_ = end_size_;
@@ -122,23 +122,23 @@ class pvector {
       *ptr = init_val;
   }
 
-  size_t capacity() {
+  size_t capacity() const {
     return end_capacity_ - start_;
   }
 
-  size_t size() {
+  size_t size() const {
     return end_size_ - start_;
   }
 
-  iterator begin() {
+  iterator begin() const {
     return start_;
   }
 
-  iterator end() {
+  iterator end() const {
     return end_size_;
   }
 
-  T_* data() {
+  T_* data() const {
     return start_;
   }
 

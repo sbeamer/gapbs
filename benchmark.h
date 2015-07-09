@@ -35,7 +35,7 @@ typedef WriterBase<NodeID, WNode> WeightedWriter;
 template<typename GraphT_>
 class SourcePicker {
  public:
-  SourcePicker(const GraphT_ &g, NodeID given_source=-1)
+  explicit SourcePicker(const GraphT_ &g, NodeID given_source = -1)
       : given_source(given_source), rng(8), udist(0, g.num_nodes()-1), g_(g) {}
 
   NodeID PickNext() {
@@ -76,17 +76,18 @@ std::vector<std::pair<ValT, KeyT>> TopK(
 
 
 template<typename GraphT_, typename GraphFunc, typename AnalysisFunc>
-void BenchmarkFunc(CLApp &cli, GraphT_ &g, GraphFunc f, AnalysisFunc a) {
+void BenchmarkKernel(const CLApp &cli, const GraphT_ &g,
+                     GraphFunc kernel, AnalysisFunc stats) {
   g.PrintStats();
   double search_total = 0;
   Timer search_timer;
   for (int iter=0; iter < cli.num_trials(); iter++) {
     search_timer.Start();
-    auto result = f(g);
+    auto result = kernel(g);
     search_timer.Stop();
     PrintTime("Trial Time", search_timer.Seconds());
     if (cli.do_analysis() && (iter == (cli.num_trials()-1))) {
-      a(g, result);
+      stats(g, result);
     }
     search_total += search_timer.Seconds();
   }

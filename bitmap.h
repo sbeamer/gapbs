@@ -23,7 +23,7 @@ uint64_t bit_offset(size_t n) { return n & (bits_per_word-1); }
 
 class Bitmap {
  public:
-  Bitmap(size_t size) {
+  explicit Bitmap(size_t size) {
     uint64_t num_words = (size + bits_per_word - 1) / bits_per_word;
     start_ = new uint64_t[num_words];
     end_ = start_ + num_words;
@@ -49,7 +49,7 @@ class Bitmap {
     } while (!compare_and_swap(start_[word_offset(pos)], old_val, new_val));
   }
 
-  bool get_bit(size_t pos) {
+  bool get_bit(size_t pos) const {
     return (start_[word_offset(pos)] >> bit_offset(pos)) & 1l;
   }
 

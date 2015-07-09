@@ -2,9 +2,9 @@
 // See LICENSE.txt for license details
 
 #include <algorithm>
+#include <cinttypes>
 #include <iostream>
 #include <unordered_map>
-#include <numeric>
 #include <vector>
 
 #include "benchmark.h"
@@ -17,11 +17,11 @@
 using namespace std;
 
 
-pvector<NodeID> ShiloachVishkin(Graph &g) {
+pvector<NodeID> ShiloachVishkin(const Graph &g) {
   pvector<NodeID> comp(g.num_nodes());
   #pragma omp parallel for
   for (NodeID n=0; n < g.num_nodes(); n++)
-    comp[n] = n;  
+    comp[n] = n;
   bool change = true;
   int num_iter = 0;
   while (change) {
@@ -47,7 +47,7 @@ pvector<NodeID> ShiloachVishkin(Graph &g) {
   return comp;
 }
 
-void PrintCompStats(Graph &g, pvector<NodeID> &comp) {
+void PrintCompStats(const Graph &g, const pvector<NodeID> &comp) {
   cout << endl;
   unordered_map<NodeID, NodeID> count;
   for (NodeID comp_i : comp)
@@ -72,6 +72,6 @@ int main(int argc, char* argv[]) {
     return -1;
   Builder b(cli);
   Graph g = b.MakeGraph();
-  BenchmarkFunc(cli, g, ShiloachVishkin, PrintCompStats);
+  BenchmarkKernel(cli, g, ShiloachVishkin, PrintCompStats);
   return 0;
 }

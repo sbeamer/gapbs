@@ -28,45 +28,45 @@ class SlidingQueue {
   friend class QueueBuffer<T>;
 
  public:
-  SlidingQueue(size_t shared_size) {
+  explicit SlidingQueue(size_t shared_size) {
     shared = new T[shared_size];
-    Reset();
+    reset();
   }
 
   ~SlidingQueue() {
     delete[] shared;
   }
 
-  void Push(T to_add) {
+  void push_back(T to_add) {
     shared[shared_in++] = to_add;
   }
 
-  bool Empty() {
+  bool empty() const {
     return shared_out_start == shared_out_end;
   }
 
-  void Reset() {
+  void reset() {
     shared_out_start = 0;
     shared_out_end = 0;
     shared_in = 0;
   }
 
-  void SlideWindow() {
+  void slide_window() {
     shared_out_start = shared_out_end;
     shared_out_end = shared_in;
   }
 
   typedef T* iterator;
 
-  iterator begin() {
+  iterator begin() const {
     return shared + shared_out_start;
   }
 
-  iterator end() {
+  iterator end() const {
     return shared + shared_out_end;
   }
 
-  size_t size() {
+  size_t size() const {
     return end() - begin();
   }
 };
@@ -80,7 +80,7 @@ class QueueBuffer {
   const size_t local_size;
 
  public:
-  QueueBuffer(SlidingQueue<T> &master, size_t given_size=16384)
+  explicit QueueBuffer(SlidingQueue<T> &master, size_t given_size = 16384)
       : sq(master), local_size(given_size) {
     in = 0;
     local_queue = new T[local_size];
@@ -90,13 +90,13 @@ class QueueBuffer {
     delete[] local_queue;
   }
 
-  void Push(T to_add) {
+  void push_back(T to_add) {
     if (in == local_size)
-      Flush();
+      flush();
     local_queue[in++] = to_add;
   }
 
-  void Flush() {
+  void flush() {
     T *shared_queue = sq.shared;
     size_t copy_start = fetch_and_add(sq.shared_in, in);
     std::copy(local_queue, local_queue+in, shared_queue+copy_start);
