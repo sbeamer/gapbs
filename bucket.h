@@ -15,6 +15,8 @@ Container that can be appended to in parallel by copying reference to data
 with swap_vector_in(v). Once reading has started (via iterators), should
 not append any more data. 
 
+Like other iterators, comparing iterators for different objects is undefined.
+
 */
 
 template <typename T_>
@@ -89,23 +91,33 @@ class Bucket {
       return copy;
     }
 
-    // handle negative to_add?
-    // make off end accumulate?
     iterator & operator +=(int64_t to_add) {
-      while ((to_add != 0) && (chunk_index_ < chunks_ref_.size())) {
-        chunk_offset_ += to_add;
-        if (chunk_offset_ >= chunks_ref_[chunk_index_].size()) {
-          to_add = chunk_offset_ - chunks_ref_[chunk_index_].size();
-          chunk_offset_ = 0;
-          chunk_index_++;
-        } else {
-          to_add = 0;  // success
+      if (to_add > 0) {
+        while ((to_add != 0) && (chunk_index_ < chunks_ref_.size())) {
+          chunk_offset_ += to_add;
+          if (chunk_offset_ >= chunks_ref_[chunk_index_].size()) {
+            to_add = chunk_offset_ - chunks_ref_[chunk_index_].size();
+            chunk_offset_ = 0;
+            chunk_index_++;
+          } else {
+            to_add = 0;  // success
+          }
+        }
+      } else {
+        while ((to_add != 0) && (chunk_index_ >= 0)) {
+          chunk_offset_ += to_add;
+          if (chunk_offset_ < 0) {
+            chunk_index_--;
+            to_add = chunk_offset_;
+            chunk_offset_ = chunks_ref_[chunk_index_].size() - 1;
+          } else {
+            to_add = 0;  // success
+          }
         }
       }
       return *this;
     }
 
-    // chunks_ref_?
     int64_t operator -(const iterator &other) const {
       if (chunk_index_ == other.chunk_index_)
         return chunk_offset_ - other.chunk_offset_;
@@ -129,7 +141,6 @@ class Bucket {
       }
     }
 
-    // chunks_ref_?
     bool operator <(const iterator &other) const {
       if (chunk_index_ == other.chunk_index_)
         return chunk_offset_ == other.chunk_offset_;
