@@ -39,13 +39,6 @@ size_t OrderedCount(const Graph &g) {
 }
 
 
-// relabels graph by degree before using ordered counting
-size_t DegreeOrderedCount(const Graph &g) {
-  Graph g_by_degree = Builder::RelabelByDegree(g);
-  return OrderedCount(g_by_degree);
-}
-
-
 // heuristic to see if sufficently dense power-law graph
 bool WorthRelabelling(const Graph &g) {
   int64_t average_degree = g.num_edges() / g.num_nodes();
@@ -69,7 +62,7 @@ bool WorthRelabelling(const Graph &g) {
 // uses heuristic to see if worth relabeling
 size_t Hybrid(const Graph &g) {
   if (WorthRelabelling(g))
-    return DegreeOrderedCount(g);
+    return OrderedCount(Builder::RelabelByDegree(g));
   else
     return OrderedCount(g);
 }
