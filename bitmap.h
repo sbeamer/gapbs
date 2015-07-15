@@ -53,16 +53,6 @@ class Bitmap {
     return (start_[word_offset(pos)] >> bit_offset(pos)) & 1l;
   }
 
-  void or_in(const Bitmap &other) {
-    uint64_t *p_local = start_;
-    uint64_t *p_other = other.start_;
-    while (p_local != end_) {
-      *p_local |= *p_other;
-      p_local++;
-      p_other++;
-    }
-  }
-
   void swap(Bitmap &other) {
     std::swap(start_, other.start_);
     std::swap(end_, other.end_);

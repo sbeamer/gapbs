@@ -6,8 +6,6 @@
 
 #include <algorithm>
 
-#include "platform_atomics.h"
-
 /*
 
 Parallel vector class motivated by need to avoid serial initialization
@@ -110,10 +108,6 @@ class pvector {
     }
     *end_size_ = val;
     end_size_++;
-  }
-
-  void push_back_atomic(T_ val) {
-    *fetch_and_add(end_size_, sizeof(T_)) = val;
   }
 
   void fill(T_ init_val) {
