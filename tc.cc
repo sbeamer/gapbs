@@ -79,6 +79,10 @@ int main(int argc, char* argv[]) {
     return -1;
   Builder b(cli);
   Graph g = b.MakeGraph();
+  if (g.directed()) {
+    cout << "Input graph is directed but tc requires undirected" << endl;
+    return -2;
+  }
   BenchmarkKernel(cli, g, Hybrid, PrintTriangleStats);
   return 0;
 }
