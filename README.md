@@ -41,8 +41,8 @@ All of the binaries use the same command-line options for loading graphs:
 + `-sf graph.el` symmetrizes graph loaded from file graph.el
 
 The graph loading infrastructure understands the following formats:
-+ `.el` plain-text edge-list with an edge per line as <node1> <node2>
-+ `.wel` plain-text weighted edge-list with an edge per line as <node1> <node2> <weight>
++ `.el` plain-text edge-list with an edge per line as _node1_ _node2_
++ `.wel` plain-text weighted edge-list with an edge per line as _node1_ _node2_ _weight_
 + `.gr` DIMACS Grand Challenge format
 + `.sg` serialized pre-built graph (use `converter` to make)
 + `.wsg` weighted serialized pre-built graph (use `converter` to make)
