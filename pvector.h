@@ -6,11 +6,16 @@
 
 #include <algorithm>
 
+
 /*
+GAP Benchmark Suite
+Class:  pvector
+Author: Scott Beamer
 
-Parallel vector class motivated by need to avoid serial initialization
-done by std::vector. When resized, new elements are unitialized.
-
+Vector class with ability to not initialize or do initialize in parallel
+ - std::vector (when resizing) will always initialize, and does it serially
+ - When pvector is resized, new elements are uninitialized
+ - Resizing is not thread-safe
 */
 
 

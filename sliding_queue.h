@@ -8,13 +8,17 @@
 
 #include "platform_atomics.h"
 
+
 /*
+GAP Benchmark Suite
+Class:  SlidingQueue
+Author: Scott Beamer
 
-Double-buffered queue so appends aren't seen until SlideWindow() called.
-Use QueueBuffer when used in parallel to avoid false sharing by doing
-bulk appends from thread-local storage.
-
+Double-buffered queue so appends aren't seen until SlideWindow() called
+ - Use QueueBuffer when used in parallel to avoid false sharing by doing
+   bulk appends from thread-local storage
 */
+
 
 template <typename T>
 class QueueBuffer;

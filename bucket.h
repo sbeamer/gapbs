@@ -9,15 +9,20 @@
 #include <iterator>
 #include <vector>
 
+
 /*
+GAP Benchmark Suite
+Class:  Bucket
+Author: Scott Beamer
 
-Container that can be appended to in parallel by copying reference to data
-with swap_vector_in(v). Once reading has started (via iterators), should
-not append any more data. 
-
-Like other iterators, comparing iterators for different objects is undefined.
-
+Parallel container designed for constant time appends
+ - Threads should fill thread-local std::vector first
+ - When done with vector, call swap_vector_in(vector)
+ - Once started reading with iterator, should not modify or append anymore
+ - Like other iterators, comparing iterators for different objects is undefined
+ - Internally, built as a vector of vectors but appears contiguous by iterators
 */
+
 
 template <typename T_>
 class Bucket {
@@ -59,6 +64,7 @@ class Bucket {
   }
 
 
+  // Doesn't define every operator, but more than enough for OpenMP
   class iterator : public std::iterator<std::random_access_iterator_tag, T_> {
    public:
     iterator(size_t index, size_t offset, std::vector<std::vector<T_>> &chunks)

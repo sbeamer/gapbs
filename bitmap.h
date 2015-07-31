@@ -9,11 +9,14 @@
 
 #include "platform_atomics.h"
 
+
 /*
+GAP Benchmark Suite
+Class:  Bitmap
+Author: Scott Beamer
 
-Parallel bitmap motivated by need to be able to be able to safely set
-bits in parallel (unlike std::vector<bool>).
-
+Parallel bitmap that is thread-safe
+ - Can set bits in parallel (set_bit_atomic) unlike std::vector<bool>
 */
 
 

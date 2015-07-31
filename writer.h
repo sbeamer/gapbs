@@ -5,13 +5,23 @@
 #define WRITER_H_
 
 #include <algorithm>
-#include <cstdlib>
 #include <fstream>
 #include <iostream>
 #include <string>
 #include <type_traits>
 
 #include "graph.h"
+
+
+/*
+GAP Benchmark Suite
+Class:  Writer
+Author: Scott Beamer
+
+Given filename and graph, writes out the graph to storage
+ - Should use WriteGraph(filename, serialized)
+ - If serialized, will write out as serialized graph, otherwise, as edgelist
+*/
 
 
 template <typename NodeID_, typename DestID_ = NodeID_>

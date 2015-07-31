@@ -21,6 +21,19 @@
 #include "timer.h"
 
 
+/*
+GAP Benchmark Suite
+Class:  BuilderBase
+Author: Scott Beamer
+
+Given arguements from the command line (cli), returns a built graph
+ - MakeGraph() will parse cli and obtain edgelist and call
+   MakeGraphFromEL(edgelist) to perform actual graph construction
+ - edgelist can be from file (reader) or synthetically generated (generator)
+ - Common case: BuilderBase typedef'd (w/ params) to be Builder (benchmark.h)
+*/
+
+
 template <typename NodeID_, typename DestID_ = NodeID_,
           typename WeightT_ = NodeID_, bool invert = true>
 class BuilderBase {
@@ -74,7 +87,7 @@ class BuilderBase {
   pvector<SGOffset> PrefixSum(const pvector<NodeID_> &degrees) {
     pvector<SGOffset> sums(degrees.size() + 1);
     SGOffset total = 0;
-    for (NodeID_ n=0; n < degrees.size(); n++) {
+    for (size_t n=0; n < degrees.size(); n++) {
       sums[n] = total;
       total += degrees[n];
     }
@@ -116,6 +129,8 @@ class BuilderBase {
     return prefix;
   }
 
+  // Removes self-loops and redundant edges
+  // Side effect: neighbor IDs will be sorted
   void SquishCSR(const CSRGraph<NodeID_, DestID_, invert> &g, bool transpose,
                  DestID_*** sq_index, DestID_** sq_neighs) {
     pvector<NodeID_> diffs(g.num_nodes());
@@ -163,6 +178,13 @@ class BuilderBase {
     }
   }
 
+  /*
+  Graph Bulding Steps (for CSR):
+    - Read edgelist once to determine vertex degrees (CountDegrees)
+    - Determine vertex offsets by a prefix sum (ParallelPrefixSum)
+    - Allocate storage and set points according to offsets (GenIndex)
+    - Copy edges into storage
+  */
   void MakeCSR(const EdgeList &el, bool transpose, DestID_*** index,
                DestID_** neighs) {
     pvector<NodeID_> degrees = CountDegrees(el, transpose);
@@ -221,6 +243,7 @@ class BuilderBase {
     return SquishGraph(g);
   }
 
+  // Relabels (and rebuilds) graph by order of decreasing degree
   static
   CSRGraph<NodeID_, DestID_, invert> RelabelByDegree(
       const CSRGraph<NodeID_, DestID_, invert> &g) {

@@ -13,6 +13,21 @@
 #include "pvector.h"
 
 
+/*
+GAP Benchmark Suite
+Class:  Generator
+Author: Scott Beamer
+
+Given scale and degree, generates edgelist for synthetic graph
+ - Intended to be called from Builder
+ - GenerateEL(uniform) generates and returns the edgelist
+ - Can generate uniform random (uniform=true) or R-MAT graph according
+   to Graph500 parameters (uniform=false)
+ - Can also randomize weights within a weighted edgelist (InsertWeights)
+ - Blocking/reseeding is for parallelism with deterministic output edgelist
+*/
+
+
 template <typename NodeID_, typename DestID_ = NodeID_,
           typename WeightT_ = NodeID_>
 class Generator {
@@ -56,7 +71,7 @@ class Generator {
     return el;
   }
 
-  EdgeList MakeKronEL() {
+  EdgeList MakeRMatEL() {
     const float A = 0.57, B = 0.19, C = 0.19;
     EdgeList el(num_edges_);
     #pragma omp parallel
@@ -99,7 +114,7 @@ class Generator {
     if (uniform)
       el = MakeUniformEL();
     else
-      el = MakeKronEL();
+      el = MakeRMatEL();
     t.Stop();
     PrintTime("Generate Time", t.Seconds());
     return el;
@@ -107,6 +122,7 @@ class Generator {
 
   static void InsertWeights(pvector<EdgePair<NodeID_, NodeID_>> &el) {}
 
+  // Overwrites existing weights with random from [1,255]
   static void InsertWeights(pvector<WEdge> &el) {
     #pragma omp parallel
     {

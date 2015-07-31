@@ -5,6 +5,16 @@
 #define PLATFORM_ATOMICS_H_
 
 
+/*
+GAP Benchmark Suite
+File:   Platform Atomics
+Author: Scott Beamer
+
+Wrappers for compiler intrinsics for atomic memory operations (AMOs)
+ - If not using OpenMP (serial), provides serial fallbacks
+*/
+
+
 #if defined _OPENMP
 
   #if defined __GNUC__

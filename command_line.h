@@ -5,14 +5,23 @@
 #define COMMAND_LINE_H_
 
 #include <getopt.h>
-#include <stdio.h>
 
 #include <algorithm>
-#include <cstdlib>
 #include <cinttypes>
 #include <iostream>
 #include <string>
 #include <vector>
+
+
+/*
+GAP Benchmark Suite
+Class:  CLBase
+Author: Scott Beamer
+
+Handles command line argument parsing
+ - Through inheritance, can add more options to object
+ - For example, most kernels will use CLApp
+*/
 
 
 class CLBase {
@@ -23,7 +32,6 @@ class CLBase {
   std::string get_args_ = "f:g:hsu:";
   std::vector<std::string> help_strings_;
 
-  bool ok_to_continue_ = true;
   int scale_ = -1;
   std::string filename_ = "";
   bool symmetrize_ = false;
@@ -60,11 +68,11 @@ class CLBase {
     }
     if ((filename_ == "") && (scale_ == -1)) {
       std::cout << "No graph input specified. (Use -h for help)" << std::endl;
-      ok_to_continue_ = false;
+      return false;
     }
     if (scale_ != -1)
       symmetrize_ = true;
-    return ok_to_continue_;
+    return true;
   }
 
   void virtual HandleArg(signed char opt, char* opt_arg) {
@@ -82,7 +90,7 @@ class CLBase {
     // std::sort(help_strings_.begin(), help_strings_.end());
     for (std::string h : help_strings_)
       std::cout << h << std::endl;
-    ok_to_continue_ = false;
+    std::exit(0);
   }
 
   int scale() const { return scale_; }

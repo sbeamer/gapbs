@@ -11,7 +11,19 @@
 #include "pvector.h"
 
 
+/*
+GAP Benchmark Suite
+Class:  CSRGraph
+Author: Scott Beamer
 
+Simple container for graph in CSR format
+ - Intended to be constructed by a Builder
+ - To make weighted, set DestID_ template type to NodeWeight
+ - MakeInverse parameter controls whether graph stores its inverse
+*/
+
+
+// Used to hold node & weight, with another node it makes a weighted edge
 template <typename NodeID_, typename WeightT_>
 struct NodeWeight {
   NodeID_ v;
@@ -54,6 +66,7 @@ std::istream& operator>>(std::istream& is, NodeWeight<NodeID_, WeightT_>& nw) {
 
 
 
+// Syntatic sugar for an edge
 template <typename SrcT, typename DstT = SrcT>
 struct EdgePair {
   SrcT u;
@@ -64,6 +77,7 @@ struct EdgePair {
   EdgePair(SrcT u, DstT v) : u(u), v(v) {}
 };
 
+// SG = serialized graph, these types are for writing graph to file
 typedef int32_t SGID;
 typedef EdgePair<SGID> SGEdge;
 typedef int64_t SGOffset;
@@ -72,6 +86,7 @@ typedef int64_t SGOffset;
 
 template <class NodeID_, class DestID_ = NodeID_, bool MakeInverse = true>
 class CSRGraph {
+  // Used to access neighbors of vertex, basically sugar for iterators
   class Neighborhood {
     NodeID_ n_;
     DestID_** g_index_;
@@ -173,6 +188,7 @@ class CSRGraph {
   }
 
   int64_t in_degree(NodeID_ v) const {
+    static_assert(MakeInverse, "Graph inversion disabled but reading inverse");
     return in_index_[v+1] - in_index_[v];
   }
 

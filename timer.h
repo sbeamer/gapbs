@@ -6,18 +6,24 @@
 
 #include <sys/time.h>
 
-#define TIME_OP(t, op) { t.Start(); (op); t.Stop(); }
+
+/*
+GAP Benchmark Suite
+Class:  Timer
+Author: Scott Beamer
+
+Simple timer that wraps gettimeofday
+*/
+
 
 class Timer {
  public:
   Timer() {}
 
-  inline
   void Start() {
     gettimeofday(&start_time_, NULL);
   }
 
-  inline
   void Stop() {
     gettimeofday(&elapsed_time_, NULL);
     elapsed_time_.tv_sec  -= start_time_.tv_sec;
@@ -41,5 +47,7 @@ class Timer {
   struct timeval elapsed_time_;
 };
 
+// Times op's execution using the timer t
+#define TIME_OP(t, op) { t.Start(); (op); t.Stop(); }
 
 #endif  // TIMER_H_

@@ -4,16 +4,27 @@
 #ifndef READER_H_
 #define READER_H_
 
-#include <algorithm>
-#include <cstdlib>
 #include <iostream>
 #include <fstream>
 #include <string>
 #include <type_traits>
 
-#include "graph.h"
 #include "print_util.h"
 #include "pvector.h"
+
+
+/*
+GAP Benchmark Suite
+Class:  Reader
+Author: Scott Beamer
+
+Given filename, returns an edgelist or the entire graph (if serialized)
+ - Intended to be called from Builder
+ - Determines file format from the filename's suffix
+ - If the input graph is serialized (.sg or .wsg), reads the graph
+   directly into the returned graph instance
+ - Otherwise, reads the file and returns an edgelist
+*/
 
 
 template <typename NodeID_, typename DestID_ = NodeID_,

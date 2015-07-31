@@ -5,6 +5,7 @@
 #define BENCHMARK_H_
 
 #include <algorithm>
+#include <cinttypes>
 #include <functional>
 #include <random>
 #include <utility>
@@ -13,12 +14,21 @@
 #include "builder.h"
 #include "graph.h"
 #include "print_util.h"
-#include "reader.h"
 #include "timer.h"
 #include "writer.h"
 
 
-typedef int NodeID;
+/*
+GAP Benchmark Suite
+File:   Benchmark
+Author: Scott Beamer
+
+Various helper functions to ease writing of kernels
+*/
+
+
+// Default type signatures for commonly used types
+typedef int32_t NodeID;
 typedef NodeID WeightT;
 typedef NodeWeight<NodeID, WeightT> WNode;
 
@@ -32,6 +42,7 @@ typedef WriterBase<NodeID, NodeID> Writer;
 typedef WriterBase<NodeID, WNode> WeightedWriter;
 
 
+// Used to pick random non-zero degree starting points for search algorithms
 template<typename GraphT_>
 class SourcePicker {
  public:
@@ -56,6 +67,7 @@ class SourcePicker {
 };
 
 
+// Returns k pairs with largest values from list of key-value pairs
 template<typename KeyT, typename ValT>
 std::vector<std::pair<ValT, KeyT>> TopK(
     const std::vector<std::pair<KeyT, ValT>> &to_sort, size_t k) {
@@ -75,6 +87,7 @@ std::vector<std::pair<ValT, KeyT>> TopK(
 }
 
 
+// Calls (and times) kernel according to command line arguments
 template<typename GraphT_, typename GraphFunc, typename AnalysisFunc>
 void BenchmarkKernel(const CLApp &cli, const GraphT_ &g,
                      GraphFunc kernel, AnalysisFunc stats) {
