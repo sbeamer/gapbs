@@ -6,6 +6,7 @@
 #include <vector>
 
 #include "benchmark.h"
+#include "bitmap.h"
 #include "builder.h"
 #include "command_line.h"
 #include "graph.h"
@@ -20,9 +21,8 @@ using namespace std;
 typedef float ScoreT;
 
 
-void BFS(const Graph &g, NodeID source, pvector<NodeID> &path_counts,
-    pvector<NodeID> &succ, pvector<SGOffset> &succ_tails,
-    vector<SlidingQueue<NodeID>::iterator> &depth_index,
+void PBFS(const Graph &g, NodeID source, pvector<NodeID> &path_counts,
+    Bitmap &succ, vector<SlidingQueue<NodeID>::iterator> &depth_index,
     SlidingQueue<NodeID> &queue) {
   pvector<NodeID> depths(g.num_nodes(), -1);
   depths[source] = 0;
@@ -30,48 +30,59 @@ void BFS(const Graph &g, NodeID source, pvector<NodeID> &path_counts,
   queue.push_back(source);
   depth_index.push_back(queue.begin());
   queue.slide_window();
-  int depth = 0;
-  while (!queue.empty()) {
-    depth_index.push_back(queue.begin());
-    depth++;
-    #pragma omp parallel for
-    for (auto q_iter = queue.begin(); q_iter < queue.end(); q_iter++) {
-      NodeID u = *q_iter;
-      for (NodeID v : g.out_neigh(u)) {
-        if ((depths[v] == -1) && (compare_and_swap(depths[v], -1, depth))) {
-          queue.push_back(v);
-        }
-        if (depths[v] == depth) {
-          succ[fetch_and_add(succ_tails[u], 1)] = v;
-          path_counts[v] += path_counts[u];
+  const NodeID* g_out_start = g.out_neigh(0).begin();
+  #pragma omp parallel
+  {
+    int depth = 0;
+    QueueBuffer<NodeID> lqueue(queue);
+    while (!queue.empty()) {
+      #pragma omp single
+      depth_index.push_back(queue.begin());
+      depth++;
+      #pragma omp for
+      for (auto q_iter = queue.begin(); q_iter < queue.end(); q_iter++) {
+        NodeID u = *q_iter;
+        for (NodeID &v : g.out_neigh(u)) {
+          if ((depths[v] == -1) && (compare_and_swap(depths[v], -1, depth))) {
+            lqueue.push_back(v);
+          }
+          if (depths[v] == depth) {
+            succ.set_bit_atomic(&v - g_out_start);
+            fetch_and_add(path_counts[v], path_counts[u]);
+          }
         }
       }
+      lqueue.flush();
+      #pragma omp barrier
+      #pragma omp single
+      queue.slide_window();
     }
-    queue.slide_window();
   }
   depth_index.push_back(queue.begin());
 }
 
 
-pvector<ScoreT> Brandes(const Graph &g, NodeID source, NodeID num_iters) {
-  cout << "source: " << source << endl;
+pvector<ScoreT> Brandes(const Graph &g, SourcePicker<Graph> &sp,
+                        NodeID num_iters) {
   Timer t;
   t.Start();
   pvector<ScoreT> scores(g.num_nodes(), 0);
   pvector<NodeID> path_counts(g.num_nodes());
-  pvector<NodeID> succ(g.num_edges_directed());
-  pvector<SGOffset> succ_heads = g.VertexOffsets();
-  pvector<SGOffset> succ_tails(succ_heads.begin(), succ_heads.end());
+  Bitmap succ(g.num_edges_directed());
   vector<SlidingQueue<NodeID>::iterator> depth_index;
   SlidingQueue<NodeID> queue(g.num_nodes());
   t.Stop();
   PrintStep("a", t.Seconds());
+  const NodeID* g_in_start = g.in_neigh(0).begin();
   for (NodeID iter=0; iter < num_iters; iter++) {
+    NodeID source = sp.PickNext();
+    cout << "source: " << source << endl;
+    t.Start();
     path_counts.fill(0);
     depth_index.resize(0);
     queue.reset();
-    t.Start();
-    BFS(g, source, path_counts, succ, succ_tails, depth_index, queue);
+    succ.reset();
+    PBFS(g, source, path_counts, succ, depth_index, queue);
     t.Stop();
     PrintStep("b", t.Seconds());
     pvector<ScoreT> deltas(g.num_nodes(), 0);
@@ -81,12 +92,12 @@ pvector<ScoreT> Brandes(const Graph &g, NodeID source, NodeID num_iters) {
       for (auto it = depth_index[d]; it < depth_index[d+1]; it++) {
         NodeID u = *it;
         ScoreT delta_u = 0;
-        for (SGOffset i=succ_heads[u]; i < succ_tails[u]; i++) {
-          NodeID v = succ[i];
-          delta_u += static_cast<ScoreT>(path_counts[u]) /
-                     static_cast<ScoreT>(path_counts[v]) * (1 + deltas[v]);
+        for (NodeID &v : g.in_neigh(u)) {
+          if (succ.get_bit(&v - g_in_start)) {
+            delta_u += static_cast<ScoreT>(path_counts[u]) /
+                       static_cast<ScoreT>(path_counts[v]) * (1 + deltas[v]);
+          }
         }
-        succ_tails[u] = succ_heads[u];    // resets succ_tails
         deltas[u] = delta_u;
         scores[u] += delta_u;
       }
@@ -117,12 +128,14 @@ int main(int argc, char* argv[]) {
   CLIterApp cli(argc, argv, "betweenness-centrality", 1);
   if (!cli.ParseArgs())
     return -1;
+  if (cli.num_iters() > 1 && cli.start_vertex() != -1) {
+    cout << "Warning: iterating from same source (-r & -k)" << endl;
+  }
   Builder b(cli);
   Graph g = b.MakeGraph();
   SourcePicker<Graph> sp(g, cli.start_vertex());
   auto BCBound =
-    [&sp, &cli] (const Graph &g) { return Brandes(g, sp.PickNext(),
-                                                  cli.num_iters()); };
+    [&sp, &cli] (const Graph &g) { return Brandes(g, sp, cli.num_iters()); };
   BenchmarkKernel(cli, g, BCBound, PrintTopScores);
   return 0;
 }
