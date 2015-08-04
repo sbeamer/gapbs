@@ -92,19 +92,19 @@ template<typename GraphT_, typename GraphFunc, typename AnalysisFunc>
 void BenchmarkKernel(const CLApp &cli, const GraphT_ &g,
                      GraphFunc kernel, AnalysisFunc stats) {
   g.PrintStats();
-  double search_total = 0;
-  Timer search_timer;
+  double total_seconds = 0;
+  Timer trial_timer;
   for (int iter=0; iter < cli.num_trials(); iter++) {
-    search_timer.Start();
+    trial_timer.Start();
     auto result = kernel(g);
-    search_timer.Stop();
-    PrintTime("Trial Time", search_timer.Seconds());
+    trial_timer.Stop();
+    PrintTime("Trial Time", trial_timer.Seconds());
     if (cli.do_analysis() && (iter == (cli.num_trials()-1))) {
       stats(g, result);
     }
-    search_total += search_timer.Seconds();
+    total_seconds += trial_timer.Seconds();
   }
-  PrintTime("Search Time", search_total / cli.num_trials());
+  PrintTime("Average Time", total_seconds / cli.num_trials());
 }
 
 #endif  // BENCHMARK_H_
