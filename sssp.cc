@@ -1,13 +1,9 @@
 // Copyright (c) 2015, The Regents of the University of California (Regents)
 // See LICENSE.txt for license details
 
-#include <algorithm>
 #include <cinttypes>
 #include <limits>
-#include <iomanip>
 #include <iostream>
-#include <unordered_map>
-#include <utility>
 #include <vector>
 
 #include "benchmark.h"

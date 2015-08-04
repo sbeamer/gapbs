@@ -44,7 +44,7 @@ class Generator {
 
   void PermuteIDs(EdgeList &el) {
     pvector<NodeID_> permutation(num_nodes_);
-    std::mt19937 rng(8);
+    std::mt19937 rng(base_seed);
     #pragma omp parallel for
     for (NodeID_ n=0; n < num_nodes_; n++)
       permutation[n] = n;
