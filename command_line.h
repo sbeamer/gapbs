@@ -45,7 +45,7 @@ class CLBase {
       opt_arg = "<" + opt_arg + ">";
     if (def != "")
       def = "[" + def + "]";
-    sprintf(buf, " -%c %-9s: %-57s%7s", opt, opt_arg.c_str(),
+    snprintf(buf, kBufLen, " -%c %-9s: %-57s%7s", opt, opt_arg.c_str(),
             text.c_str(), def.c_str());
     help_strings_.push_back(buf);
   }
@@ -109,10 +109,8 @@ class CLApp : public CLBase {
  public:
   CLApp(int argc, char** argv, std::string name) : CLBase(argc, argv, name) {
     get_args_ += "an:r:";
-    char buf[30];
-    sprintf(buf, "%d", num_trials_);
     AddHelpLine('a', "a", "output analysis of last run", "false");
-    AddHelpLine('n', "n", "perform n trials", buf);
+    AddHelpLine('n', "n", "perform n trials", std::to_string(num_trials_));
     AddHelpLine('r', "node", "start from node r", "rand");
   }
 
@@ -139,9 +137,7 @@ class CLIterApp : public CLApp {
   CLIterApp(int argc, char** argv, std::string name, int num_iters) :
     CLApp(argc, argv, name), num_iters_(num_iters) {
     get_args_ += "k:";
-    char buf[15];
-    sprintf(buf, "%d", num_iters_);
-    AddHelpLine('k', "k", "perform k iterations", buf);
+    AddHelpLine('k', "k", "perform k iterations", std::to_string(num_iters_));
   }
 
   void HandleArg(signed char opt, char* opt_arg) override {
@@ -162,9 +158,7 @@ class CLDelta : public CLApp {
  public:
   CLDelta(int argc, char** argv, std::string name) : CLApp(argc, argv, name) {
     get_args_ += "d:";
-    char buf[15];
-    sprintf(buf, "%d", delta_);
-    AddHelpLine('d', "d", "delta parameter", buf);
+    AddHelpLine('d', "d", "delta parameter", std::to_string(delta_));
   }
 
   void HandleArg(signed char opt, char* opt_arg) override {
