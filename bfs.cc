@@ -14,19 +14,34 @@
 #include "sliding_queue.h"
 #include "timer.h"
 
-using namespace std;
-
 
 /*
+GAP Benchmark Suite
+Kernel: Breadth-First Search (BFS)
+Author: Scott Beamer
 
-Using optimization of precomputing degrees in bulk in beginning and storing
+Will return parent array for a BFS traversal from a source vertex
+
+This BFS implementation makes use of the Direction-Optimizing approach [1].
+It uses the alpha and beta parameters to determine whether to switch search
+directions. For representing the frontier, it uses a SlidingQueue for the
+top-down approach and a Bitmap for the bottom-up approach. To reduce
+false-sharing for the top-down approach, thread-local QueueBuffer's are used.
+
+To save time computing the number of edges exiting the frontier, this
+implementation precomputes the degrees in bulk at the beginning by storing
 them in parent array as negative numbers. Thus the encoding of parent is:
-parent[x] < 0 implies it is -out_degree(x)
-parent[x] >= 0 implies it is parent(x)
+  parent[x] < 0 implies x is unvisited and parent[x] = -out_degree(x)
+  parent[x] >= 0 implies x been visited
+
+[1] "Direction-Optimizing Breadth-First Search", Scott Beamer, Krste Asanović,
+    and David Patterson, International Conference on High Performance Computing,
+    Networking, Storage and Analysis (SC), Salt Lake City, Utah, November 2012.
 
 */
 
 
+using namespace std;
 
 int64_t BUStep(const Graph &g, pvector<NodeID> &parent, Bitmap &front,
                Bitmap &next) {
