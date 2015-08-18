@@ -22,8 +22,8 @@ Author: Scott Beamer
 
 Will return comp array labelling each vertex with a connected component ID
 
-This CC implementation makes use of the Shiloach-Vishkin[2] algorithm with
-implementation optimizations from Bader et al.[1].
+This CC implementation makes use of the Shiloach-Vishkin [2] algorithm with
+implementation optimizations from Bader et al. [1].
 
 [1] David A Bader, Guojing Cong, and John Feo. "On the architectural
     requirements for efficient execution of graph algorithms." International
