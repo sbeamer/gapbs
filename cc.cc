@@ -14,8 +14,27 @@
 #include "pvector.h"
 #include "timer.h"
 
-using namespace std;
 
+/*
+GAP Benchmark Suite
+Kernel: Connected Components (CC)
+Author: Scott Beamer
+
+Will return comp array labelling each vertex with a connected component ID
+
+This CC implementation makes use of the Shiloach-Vishkin[2] algorithm with
+implementation optimizations from Bader et al.[1].
+
+[1] David A Bader, Guojing Cong, and John Feo. "On the architectural
+    requirements for efficient execution of graph algorithms." International
+    Conference on Parallel Processing, Jul 2005.
+
+[2] Yossi Shiloach and Uzi Vishkin. "An o(logn) parallel connectivity algorithm"
+    Journal of Algorithms, 3(1):57–67, 1982.
+*/
+
+
+using namespace std;
 
 pvector<NodeID> ShiloachVishkin(const Graph &g) {
   pvector<NodeID> comp(g.num_nodes());

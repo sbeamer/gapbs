@@ -34,10 +34,10 @@ them in parent array as negative numbers. Thus the encoding of parent is:
   parent[x] < 0 implies x is unvisited and parent[x] = -out_degree(x)
   parent[x] >= 0 implies x been visited
 
-[1] "Direction-Optimizing Breadth-First Search", Scott Beamer, Krste Asanović,
-    and David Patterson, International Conference on High Performance Computing,
-    Networking, Storage and Analysis (SC), Salt Lake City, Utah, November 2012.
-
+[1] Scott Beamer, Krste Asanović, and David Patterson. "Direction-Optimizing
+    Breadth-First Search." International Conference on High Performance
+    Computing, Networking, Storage and Analysis (SC), Salt Lake City, Utah,
+    November 2012.
 */
 
 
