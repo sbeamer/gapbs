@@ -11,13 +11,28 @@
 #include "graph.h"
 #include "pvector.h"
 
-using namespace std;
 
+/*
+GAP Benchmark Suite
+Kernel: PageRank (PR)
+Author: Scott Beamer
+
+Will return pagerank scores for all vertices once total change < epsilon
+
+This PR implementation uses the traditional iterative approach. This is done
+to ease comparisons to other implementations (often use same algorithm), but
+it is not necesarily the fastest way to implement it. It does perform the
+updates in the pull direction to remove the need for atomics.
+*/
+
+
+using namespace std;
 
 typedef float ScoreT;
 const float kDamp = 0.85;
 
-pvector<ScoreT> PageRankPull(const Graph &g, int max_iters, double epsilon=0) {
+pvector<ScoreT> PageRankPull(const Graph &g, int max_iters,
+                             double epsilon = 0) {
   const ScoreT init_score = 1.0f / g.num_nodes();
   const ScoreT base_score = (1.0f - kDamp) / g.num_nodes();
   pvector<ScoreT> scores(g.num_nodes(), init_score);
