@@ -1,6 +1,12 @@
 # See LICENSE.txt for license details.
 
-CXX_FLAGS += -std=c++11 -O3 -fopenmp
+PAR_FLAG = -fopenmp
+
+ifneq (,$(findstring icpc,$(CXX)))
+	PAR_FLAG = -openmp
+endif
+
+CXX_FLAGS += -std=c++11 -O3 -Wall $(PAR_FLAG)
 
 SUITE = bc bfs cc pr sssp tc converter
 
