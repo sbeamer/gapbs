@@ -15,8 +15,11 @@
 GAP Benchmark Suite
 Author: Scott Beamer
 
-Useful output functions to ensure formmating consistency
+Miscellaneous helpers that don't fit into classes
 */
+
+
+static const int64_t kRandSeed = 27491095;
 
 
 void PrintTime(const std::string &s, double seconds) {

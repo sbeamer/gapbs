@@ -13,7 +13,7 @@
 
 #include "builder.h"
 #include "graph.h"
-#include "print_util.h"
+#include "util.h"
 #include "timer.h"
 #include "writer.h"
 
@@ -47,7 +47,8 @@ template<typename GraphT_>
 class SourcePicker {
  public:
   explicit SourcePicker(const GraphT_ &g, NodeID given_source = -1)
-      : given_source(given_source), rng(8), udist(0, g.num_nodes()-1), g_(g) {}
+      : given_source(given_source), rng(kRandSeed), udist(0, g.num_nodes()-1),
+        g_(g) {}
 
   NodeID PickNext() {
     if (given_source != -1)

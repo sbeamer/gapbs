@@ -9,7 +9,7 @@
 #include <random>
 
 #include "graph.h"
-#include "print_util.h"
+#include "util.h"
 #include "pvector.h"
 
 
@@ -44,7 +44,7 @@ class Generator {
 
   void PermuteIDs(EdgeList &el) {
     pvector<NodeID_> permutation(num_nodes_);
-    std::mt19937 rng(base_seed);
+    std::mt19937 rng(kRandSeed);
     #pragma omp parallel for
     for (NodeID_ n=0; n < num_nodes_; n++)
       permutation[n] = n;
@@ -62,7 +62,7 @@ class Generator {
       std::uniform_int_distribution<NodeID_> udist(0, num_nodes_-1);
       #pragma omp for
       for (int64_t block=0; block < num_edges_; block+=block_size) {
-        rng.seed(base_seed + block/block_size);
+        rng.seed(kRandSeed + block/block_size);
         for (int64_t e=block; e < std::min(block+block_size, num_edges_); e++) {
           el[e] = Edge(udist(rng), udist(rng));
         }
@@ -80,7 +80,7 @@ class Generator {
       std::uniform_real_distribution<float> udist(0, 1.0);
       #pragma omp for
       for (int64_t block=0; block < num_edges_; block+=block_size) {
-        rng.seed(base_seed + block/block_size);
+        rng.seed(kRandSeed + block/block_size);
         for (int64_t e=block; e < std::min(block+block_size, num_edges_); e++) {
           NodeID_ src = 0, dst = 0;
           for (int depth=0; depth < scale_; depth++) {
@@ -101,7 +101,6 @@ class Generator {
       }
     }
     PermuteIDs(el);
-    // TIME_PRINT("Permute", PermuteIDs(el));
     // TIME_PRINT("Shuffle", std::shuffle(el.begin(), el.end(),
     //                                    std::mt19937()));
     return el;
@@ -131,7 +130,7 @@ class Generator {
       int64_t el_size = el.size();
       #pragma omp for
       for (int64_t block=0; block < el_size; block+=block_size) {
-        rng.seed(base_seed + block/block_size);
+        rng.seed(kRandSeed + block/block_size);
         for (int64_t e=block; e < std::min(block+block_size, el_size); e++) {
           el[e].v.w = udist(rng);
         }
@@ -143,7 +142,6 @@ class Generator {
   int scale_;
   int64_t num_nodes_;
   int64_t num_edges_;
-  static const NodeID_ base_seed = 8;
   static const int64_t block_size = 1<<18;
 };
 

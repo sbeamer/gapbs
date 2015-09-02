@@ -15,7 +15,7 @@
 #include "generator.h"
 #include "graph.h"
 #include "platform_atomics.h"
-#include "print_util.h"
+#include "util.h"
 #include "pvector.h"
 #include "reader.h"
 #include "timer.h"
