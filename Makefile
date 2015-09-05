@@ -16,6 +16,9 @@ all: $(SUITE)
 % : %.cc *.h
 	$(CXX) $(CXX_FLAGS) $< -o $@$
 
+# Testing
+include test/test.mk
+
 .PHONY: clean
 clean:
 	rm -f $(SUITE)

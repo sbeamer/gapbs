@@ -5,3 +5,5 @@ converter
 pr
 sssp
 tc
+
+test/out/*.out
