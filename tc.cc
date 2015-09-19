@@ -109,6 +109,6 @@ int main(int argc, char* argv[]) {
     cout << "Input graph is directed but tc requires undirected" << endl;
     return -2;
   }
-  BenchmarkKernel(cli, g, Hybrid, PrintTriangleStats);
+  BenchmarkKernel(cli, g, Hybrid, PrintTriangleStats, VerifyUnimplemented);
   return 0;
 }

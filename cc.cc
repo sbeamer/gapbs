@@ -91,6 +91,6 @@ int main(int argc, char* argv[]) {
     return -1;
   Builder b(cli);
   Graph g = b.MakeGraph();
-  BenchmarkKernel(cli, g, ShiloachVishkin, PrintCompStats);
+  BenchmarkKernel(cli, g, ShiloachVishkin, PrintCompStats, VerifyUnimplemented);
   return 0;
 }

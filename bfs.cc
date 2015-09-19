@@ -188,6 +188,6 @@ int main(int argc, char* argv[]) {
   Graph g = b.MakeGraph();
   SourcePicker<Graph> sp(g, cli.start_vertex());
   auto BFSBound = [&sp] (const Graph &g) { return DOBFS(g, sp.PickNext()); };
-  BenchmarkKernel(cli, g, BFSBound, PrintBFSStats);
+  BenchmarkKernel(cli, g, BFSBound, PrintBFSStats, VerifyUnimplemented);
   return 0;
 }

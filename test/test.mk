@@ -7,7 +7,7 @@
 #-----------------------------------------------------------------------#
 
 # Dependencies are the tests it will run
-test-all: test-build test-generate test-load
+test-all: test-build test-generate test-load test-verify
 
 # Does everthing, intended target for users
 test: test-score
@@ -17,7 +17,7 @@ test: test-score
 
 # Sums up number of passes and fails
 test-score: test-all
-	@$(MAKE) test-all | cut -d\  -f 2 | sort | uniq -c
+	@$(MAKE) test-all | cut -d\  -f 2 | grep 'PASS\|FAIL' | sort | uniq -c
 
 # Result output strings
 PASS = \033[92mPASS\033[0m
@@ -49,7 +49,7 @@ test-generate-%: test/out/generate-%.out
 	@if grep -q "`cat test/reference/graph-$*.out`" $<; \
 		then echo " $(PASS) Generates $*"; \
 		else echo " $(FAIL) Generates $*"; \
-		fi
+	fi
 
 # Loading graphs from files
 test-load: test-load-4.gr test-load-4.el test-load-4.wel
@@ -61,5 +61,25 @@ test/out/load-%.out: test/out $(GENERATE_KERNEL)
 test-load-%: test/out/load-%.out
 	@if grep -q "`cat test/reference/graph-$*.out`" $<; \
 		then echo " $(PASS) Load $*"; \
-		else echo " $(FAIL) Generates $*"; \
-		fi
+		else echo " $(FAIL) Load $*"; \
+	fi
+
+
+
+# Kernel Output Verification -------------------------------------------#
+#-----------------------------------------------------------------------#
+
+# Trivally small graph, will add benchmark graphs
+TEST_GRAPH= g10
+
+test/out/verify-%-$(TEST_GRAPH).out: %
+	./$* -g10 -vn1 > $@
+
+.SECONDARY:
+test-verify-%-$(TEST_GRAPH): test/out/verify-%-$(TEST_GRAPH).out
+	@if grep -q "Verification:           PASS" $<; \
+		then echo " $(PASS) Verify $*"; \
+		else echo " $(FAIL) Verify $*"; \
+	fi
+
+test-verify: $(addsuffix -$(TEST_GRAPH), $(addprefix test-verify-, $(KERNELS)))

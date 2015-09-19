@@ -141,6 +141,6 @@ int main(int argc, char* argv[]) {
   auto SSSPBound = [&sp, &cli] (const WGraph &g) {
     return DeltaStep(g, sp.PickNext(), cli.delta());
   };
-  BenchmarkKernel(cli, g, SSSPBound, PrintSSSPStats);
+  BenchmarkKernel(cli, g, SSSPBound, PrintSSSPStats, VerifyUnimplemented);
   return 0;
 }

@@ -79,6 +79,6 @@ int main(int argc, char* argv[]) {
   auto PRBound = [&cli] (const Graph &g) {
     return PageRankPull(g, cli.num_iters(), 1e-4);
   };
-  BenchmarkKernel(cli, g, PRBound, PrintTopScores);
+  BenchmarkKernel(cli, g, PRBound, PrintTopScores, VerifyUnimplemented);
   return 0;
 }

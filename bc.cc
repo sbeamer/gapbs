@@ -161,6 +161,6 @@ int main(int argc, char* argv[]) {
   SourcePicker<Graph> sp(g, cli.start_vertex());
   auto BCBound =
     [&sp, &cli] (const Graph &g) { return Brandes(g, sp, cli.num_iters()); };
-  BenchmarkKernel(cli, g, BCBound, PrintTopScores);
+  BenchmarkKernel(cli, g, BCBound, PrintTopScores, VerifyUnimplemented);
   return 0;
 }

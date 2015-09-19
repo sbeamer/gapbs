@@ -22,6 +22,10 @@ Miscellaneous helpers that don't fit into classes
 static const int64_t kRandSeed = 27491095;
 
 
+void PrintLabel(const std::string &label, const std::string &val) {
+  printf("%-21s%7s\n", (label + ":").c_str(), val.c_str());
+}
+
 void PrintTime(const std::string &s, double seconds) {
   printf("%-21s%3.5lf\n", (s + ":").c_str(), seconds);
 }

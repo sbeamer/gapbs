@@ -8,7 +8,8 @@ endif
 
 CXX_FLAGS += -std=c++11 -O3 -Wall $(PAR_FLAG)
 
-SUITE = bc bfs cc pr sssp tc converter
+KERNELS = bc bfs cc pr sssp tc
+SUITE = $(KERNELS) converter
 
 .PHONY: all
 all: $(SUITE)
@@ -21,4 +22,4 @@ include test/test.mk
 
 .PHONY: clean
 clean:
-	rm -f $(SUITE)
+	rm -f $(SUITE) test/out/*

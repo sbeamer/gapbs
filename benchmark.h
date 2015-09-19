@@ -88,10 +88,18 @@ std::vector<std::pair<ValT, KeyT>> TopK(
 }
 
 
+bool VerifyUnimplemented(...) {
+  std::cout << "** verify unimplemented **" << std::endl;
+  return false;
+}
+
+
 // Calls (and times) kernel according to command line arguments
-template<typename GraphT_, typename GraphFunc, typename AnalysisFunc>
+template<typename GraphT_, typename GraphFunc, typename AnalysisFunc,
+         typename VerifierFunc>
 void BenchmarkKernel(const CLApp &cli, const GraphT_ &g,
-                     GraphFunc kernel, AnalysisFunc stats) {
+                     GraphFunc kernel, AnalysisFunc stats,
+                     VerifierFunc verify) {
   g.PrintStats();
   double total_seconds = 0;
   Timer trial_timer;
@@ -100,10 +108,12 @@ void BenchmarkKernel(const CLApp &cli, const GraphT_ &g,
     auto result = kernel(g);
     trial_timer.Stop();
     PrintTime("Trial Time", trial_timer.Seconds());
-    if (cli.do_analysis() && (iter == (cli.num_trials()-1))) {
-      stats(g, result);
-    }
     total_seconds += trial_timer.Seconds();
+    if (cli.do_analysis() && (iter == (cli.num_trials()-1)))
+      stats(g, result);
+    if (cli.do_verify())
+      PrintLabel("Verification",
+                 verify(std::ref(g), std::ref(result)) ? "PASS" : "FAIL");
   }
   PrintTime("Average Time", total_seconds / cli.num_trials());
 }
