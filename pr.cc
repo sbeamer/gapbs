@@ -30,6 +30,7 @@ using namespace std;
 
 typedef float ScoreT;
 const float kDamp = 0.85;
+const double kGoalEpsilon = 1e-4;
 
 pvector<ScoreT> PageRankPull(const Graph &g, int max_iters,
                              double epsilon = 0) {
@@ -51,7 +52,7 @@ pvector<ScoreT> PageRankPull(const Graph &g, int max_iters,
       scores[u] = base_score + kDamp * incoming_total;
       error += fabs(scores[u] - old_score);
     }
-    cout << " " << iter << "    " << error << endl;
+    printf(" %2d    %lf\n", iter, error);
     if (error < epsilon)
       break;
   }
@@ -70,6 +71,25 @@ void PrintTopScores(const Graph &g, const pvector<ScoreT> &scores) {
     cout << kvp.second << ":" << kvp.first << endl;
 }
 
+// single iteration in the push direction to find epsilon
+bool PageRankVerifier(const Graph &g, const pvector<ScoreT> &scores,
+                        double target_error) {
+  const ScoreT base_score = (1.0f - kDamp) / g.num_nodes();
+  pvector<ScoreT> incomming_sums(g.num_nodes(), 0);
+  double error = 0;
+  for (NodeID u=0; u < g.num_nodes(); u++) {
+    ScoreT outgoing_contrib = scores[u] / g.out_degree(u);
+    for (NodeID v : g.out_neigh(u))
+      incomming_sums[v] += outgoing_contrib;
+  }
+  for (NodeID n=0; n < g.num_nodes(); n++) {
+    error += fabs(base_score + kDamp * incomming_sums[n] - scores[n]);
+    incomming_sums[n] = 0;
+  }
+  PrintTime("Total Error", error);
+  return error < target_error;
+}
+
 int main(int argc, char* argv[]) {
   CLIterApp cli(argc, argv, "pagerank", 20);
   if (!cli.ParseArgs())
@@ -77,8 +97,11 @@ int main(int argc, char* argv[]) {
   Builder b(cli);
   Graph g = b.MakeGraph();
   auto PRBound = [&cli] (const Graph &g) {
-    return PageRankPull(g, cli.num_iters(), 1e-4);
+    return PageRankPull(g, cli.num_iters(), kGoalEpsilon);
   };
-  BenchmarkKernel(cli, g, PRBound, PrintTopScores, VerifyUnimplemented);
+  auto VerifierBound = [] (const Graph &g, const pvector<ScoreT> &scores) {
+    return PageRankVerifier(g, scores, kGoalEpsilon);
+  };
+  BenchmarkKernel(cli, g, PRBound, PrintTopScores, VerifierBound);
   return 0;
 }
