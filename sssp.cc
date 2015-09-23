@@ -4,6 +4,7 @@
 #include <cinttypes>
 #include <limits>
 #include <iostream>
+#include <queue>
 #include <vector>
 
 #include "benchmark.h"
@@ -131,6 +132,41 @@ void PrintSSSPStats(const WGraph &g, const pvector<WeightT> &dist) {
 }
 
 
+bool SSSPVerifier(const WGraph &g, NodeID source,
+                  const pvector<WeightT> &dist_to_test) {
+  // Serial Dijkstra implementation to get oracle distances
+  pvector<WeightT> oracle_dist(g.num_nodes(), kDistInf);
+  oracle_dist[source] = 0;
+  typedef pair<WeightT, NodeID> WN;
+  priority_queue<WN, vector<WN>, greater<WN>> mq;
+  mq.push(make_pair(0, source));
+  int64_t num_checks = 0;
+  while (!mq.empty()) {
+    WeightT td = mq.top().first;
+    NodeID u = mq.top().second;
+    mq.pop();
+    if (td == oracle_dist[u]) {
+      num_checks += g.out_degree(u);
+      for (WNode wn : g.out_neigh(u)) {
+        if (td + wn.w < oracle_dist[wn.v]) {
+          oracle_dist[wn.v] = td + wn.w;
+          mq.push(make_pair(td + wn.w, wn.v));
+        }
+      }
+    }
+  }
+  // Report any mismatches
+  bool all_ok = true;
+  for (NodeID n=0; n < g.num_nodes(); n++) {
+    if (dist_to_test[n] != oracle_dist[n]) {
+      cout << n << ": " << dist_to_test[n] << " != " << oracle_dist[n] << endl;
+      all_ok = false;
+    }
+  }
+  return all_ok;
+}
+
+
 int main(int argc, char* argv[]) {
   CLDelta cli(argc, argv, "single-source shortest-path");
   if (!cli.ParseArgs())
@@ -141,6 +177,10 @@ int main(int argc, char* argv[]) {
   auto SSSPBound = [&sp, &cli] (const WGraph &g) {
     return DeltaStep(g, sp.PickNext(), cli.delta());
   };
-  BenchmarkKernel(cli, g, SSSPBound, PrintSSSPStats, VerifyUnimplemented);
+  SourcePicker<WGraph> vsp(g, cli.start_vertex());
+  auto VerifierBound = [&vsp] (const WGraph &g, const pvector<WeightT> &dist) {
+    return SSSPVerifier(g, vsp.PickNext(), dist);
+  };
+  BenchmarkKernel(cli, g, SSSPBound, PrintSSSPStats, VerifierBound);
   return 0;
 }
