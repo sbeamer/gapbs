@@ -180,6 +180,38 @@ void PrintBFSStats(const Graph &g, const pvector<NodeID> &bfs_tree) {
 }
 
 
+// BFS verifier does a serial BFS from same source and asserts:
+// - parent[source] = source
+// - parent[v] = u  =>  depth[v] = depth[u+1] (except for source)
+// - parent[v] = u  => there is edge from u to v
+// - all vertices reachable from source have a parent
+bool BFSVerifier(const Graph &g, NodeID source,
+                 const pvector<NodeID> &parent) {
+  pvector<int> depth(g.num_nodes(), -1);
+  depth[source] = 0;
+  vector<NodeID> to_visit;
+  to_visit.reserve(g.num_nodes());
+  to_visit.push_back(source);
+  for (auto it = to_visit.begin(); it != to_visit.end(); it++) {
+    NodeID u = *it;
+    bool parent_has_depth_one_less = false;
+    for (NodeID v : g.out_neigh(u)) {
+      if (depth[v] == -1) {
+        depth[v] = depth[u] + 1;
+        to_visit.push_back(v);
+      } else if ((v == parent[u]) && (depth[v] == depth[u] - 1)) {
+        parent_has_depth_one_less = true;
+      }
+    }
+    if (!parent_has_depth_one_less && !((u == source) && (parent[u] == u))) {
+      cout << u << " " << parent[u] << endl;
+      return false;
+    }
+  }
+  return true;
+}
+
+
 int main(int argc, char* argv[]) {
   CLApp cli(argc, argv, "breadth-first search");
   if (!cli.ParseArgs())
@@ -188,6 +220,10 @@ int main(int argc, char* argv[]) {
   Graph g = b.MakeGraph();
   SourcePicker<Graph> sp(g, cli.start_vertex());
   auto BFSBound = [&sp] (const Graph &g) { return DOBFS(g, sp.PickNext()); };
-  BenchmarkKernel(cli, g, BFSBound, PrintBFSStats, VerifyUnimplemented);
+  SourcePicker<Graph> vsp(g, cli.start_vertex());
+  auto VerifierBound = [&vsp] (const Graph &g, const pvector<NodeID> &parent) {
+    return BFSVerifier(g, vsp.PickNext(), parent);
+  };
+  BenchmarkKernel(cli, g, BFSBound, PrintBFSStats, VerifierBound);
   return 0;
 }
