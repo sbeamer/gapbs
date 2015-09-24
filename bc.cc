@@ -98,7 +98,7 @@ pvector<ScoreT> Brandes(const Graph &g, SourcePicker<Graph> &sp,
   SlidingQueue<NodeID> queue(g.num_nodes());
   t.Stop();
   PrintStep("a", t.Seconds());
-  const NodeID* g_in_start = g.in_neigh(0).begin();
+  const NodeID* g_out_start = g.out_neigh(0).begin();
   for (NodeID iter=0; iter < num_iters; iter++) {
     NodeID source = sp.PickNext();
     cout << "source: " << source << endl;
@@ -117,8 +117,8 @@ pvector<ScoreT> Brandes(const Graph &g, SourcePicker<Graph> &sp,
       for (auto it = depth_index[d]; it < depth_index[d+1]; it++) {
         NodeID u = *it;
         ScoreT delta_u = 0;
-        for (NodeID &v : g.in_neigh(u)) {
-          if (succ.get_bit(&v - g_in_start)) {
+        for (NodeID &v : g.out_neigh(u)) {
+          if (succ.get_bit(&v - g_out_start)) {
             delta_u += static_cast<ScoreT>(path_counts[u]) /
                        static_cast<ScoreT>(path_counts[v]) * (1 + deltas[v]);
           }
