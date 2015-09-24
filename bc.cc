@@ -130,22 +130,26 @@ pvector<ScoreT> Brandes(const Graph &g, SourcePicker<Graph> &sp,
     t.Stop();
     PrintStep("p", t.Seconds());
   }
+  // normalize scores
+  ScoreT biggest_score = 0;
+  #pragma omp parallel for reduction(max : biggest_score)
+  for (NodeID n=0; n < g.num_nodes(); n++)
+    biggest_score = max(biggest_score, scores[n]);
+  #pragma omp parallel for
+  for (NodeID n=0; n < g.num_nodes(); n++)
+    scores[n] = scores[n] / biggest_score;
   return scores;
 }
 
 
 void PrintTopScores(const Graph &g, const pvector<ScoreT> &scores) {
   vector<pair<NodeID, ScoreT>> score_pairs(g.num_nodes());
-  for (NodeID n=0; n < g.num_nodes(); n++) {
+  for (NodeID n=0; n < g.num_nodes(); n++)
     score_pairs[n] = make_pair(n, scores[n]);
-  }
   int k = 5;
   vector<pair<ScoreT, NodeID>> top_k = TopK(score_pairs, k);
-  if (!score_pairs.empty()) {
-    ScoreT top_score = top_k[0].first;
-    for (auto kvp : top_k)
-      cout << kvp.second << ":" << kvp.first / top_score << endl;
-  }
+  for (auto kvp : top_k)
+    cout << kvp.second << ":" << kvp.first << endl;
 }
 
 
