@@ -29,10 +29,11 @@ class CLBase {
   int argc_;
   char** argv_;
   std::string name_;
-  std::string get_args_ = "f:g:hsu:";
+  std::string get_args_ = "f:g:hk:su:";
   std::vector<std::string> help_strings_;
 
   int scale_ = -1;
+  int degree_ = 16;
   std::string filename_ = "";
   bool symmetrize_ = false;
   bool uniform_ = false;
@@ -58,6 +59,8 @@ class CLBase {
     AddHelpLine('s', "", "symmetrize input edge list", "false");
     AddHelpLine('g', "scale", "generate 2^scale kronecker graph");
     AddHelpLine('u', "scale", "generate 2^scale uniform-random graph");
+    AddHelpLine('k', "degree", "average degree for synthetic graph",
+                std::to_string(degree_));
   }
 
   bool ParseArgs() {
@@ -80,6 +83,7 @@ class CLBase {
       case 'f': filename_ = std::string(opt_arg);           break;
       case 'g': scale_ = atoi(opt_arg);                     break;
       case 'h': PrintUsage();                               break;
+      case 'k': degree_ = atoi(opt_arg);                    break;
       case 's': symmetrize_ = true;                         break;
       case 'u': uniform_ = true; scale_ = atoi(opt_arg);    break;
     }
@@ -94,6 +98,7 @@ class CLBase {
   }
 
   int scale() const { return scale_; }
+  int degree() const { return degree_; }
   std::string filename() const { return filename_; }
   bool symmetrize() const { return symmetrize_; }
   bool uniform() const { return uniform_; }
@@ -140,13 +145,13 @@ class CLIterApp : public CLApp {
  public:
   CLIterApp(int argc, char** argv, std::string name, int num_iters) :
     CLApp(argc, argv, name), num_iters_(num_iters) {
-    get_args_ += "k:";
-    AddHelpLine('k', "k", "perform k iterations", std::to_string(num_iters_));
+    get_args_ += "i:";
+    AddHelpLine('i', "i", "perform i iterations", std::to_string(num_iters_));
   }
 
   void HandleArg(signed char opt, char* opt_arg) override {
     switch (opt) {
-      case 'k': num_iters_ = atoi(opt_arg);            break;
+      case 'i': num_iters_ = atoi(opt_arg);            break;
       default: CLApp::HandleArg(opt, opt_arg);
     }
   }

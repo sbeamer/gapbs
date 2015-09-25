@@ -235,7 +235,7 @@ class BuilderBase {
           el = r.ReadFile(needs_weights_);
         }
       } else if (cli_.scale() != -1) {
-        Generator<NodeID_, DestID_> gen(cli_.scale(), 16);
+        Generator<NodeID_, DestID_> gen(cli_.scale(), cli_.degree());
         el = gen.GenerateEL(cli_.uniform());
       }
       g = MakeGraphFromEL(el);
