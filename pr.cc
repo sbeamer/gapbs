@@ -59,6 +59,7 @@ pvector<ScoreT> PageRankPull(const Graph &g, int max_iters,
   return scores;
 }
 
+
 void PrintTopScores(const Graph &g, const pvector<ScoreT> &scores) {
   vector<pair<NodeID, ScoreT>> score_pairs(g.num_nodes());
   for (NodeID n=0; n < g.num_nodes(); n++) {
@@ -71,8 +72,10 @@ void PrintTopScores(const Graph &g, const pvector<ScoreT> &scores) {
     cout << kvp.second << ":" << kvp.first << endl;
 }
 
-// single iteration in the push direction to find epsilon
-bool PageRankVerifier(const Graph &g, const pvector<ScoreT> &scores,
+
+// Verifies by asserting a single serial iteration in push direction has
+//   error < target_error
+bool PRVerifier(const Graph &g, const pvector<ScoreT> &scores,
                         double target_error) {
   const ScoreT base_score = (1.0f - kDamp) / g.num_nodes();
   pvector<ScoreT> incomming_sums(g.num_nodes(), 0);
@@ -90,6 +93,7 @@ bool PageRankVerifier(const Graph &g, const pvector<ScoreT> &scores,
   return error < target_error;
 }
 
+
 int main(int argc, char* argv[]) {
   CLIterApp cli(argc, argv, "pagerank", 20);
   if (!cli.ParseArgs())
@@ -100,7 +104,7 @@ int main(int argc, char* argv[]) {
     return PageRankPull(g, cli.num_iters(), kGoalEpsilon);
   };
   auto VerifierBound = [] (const Graph &g, const pvector<ScoreT> &scores) {
-    return PageRankVerifier(g, scores, kGoalEpsilon);
+    return PRVerifier(g, scores, kGoalEpsilon);
   };
   BenchmarkKernel(cli, g, PRBound, PrintTopScores, VerifierBound);
   return 0;

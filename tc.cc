@@ -100,6 +100,7 @@ void PrintTriangleStats(const Graph &g, size_t total_triangles) {
 }
 
 
+// Compares with simple serial implementation that uses std::set_intersection
 bool TCVerifier(const Graph &g, size_t test_total) {
   size_t total = 0;
   vector<NodeID> intersection;

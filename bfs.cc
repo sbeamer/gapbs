@@ -182,7 +182,7 @@ void PrintBFSStats(const Graph &g, const pvector<NodeID> &bfs_tree) {
 
 // BFS verifier does a serial BFS from same source and asserts:
 // - parent[source] = source
-// - parent[v] = u  =>  depth[v] = depth[u+1] (except for source)
+// - parent[v] = u  =>  depth[v] = depth[u] + 1 (except for source)
 // - parent[v] = u  => there is edge from u to v
 // - all vertices reachable from source have a parent
 bool BFSVerifier(const Graph &g, NodeID source,

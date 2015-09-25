@@ -132,6 +132,7 @@ void PrintSSSPStats(const WGraph &g, const pvector<WeightT> &dist) {
 }
 
 
+// Compares against simple serial implementation
 bool SSSPVerifier(const WGraph &g, NodeID source,
                   const pvector<WeightT> &dist_to_test) {
   // Serial Dijkstra implementation to get oracle distances
