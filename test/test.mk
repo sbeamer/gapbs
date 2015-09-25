@@ -70,10 +70,10 @@ test-load-%: test/out/load-%.out
 #-----------------------------------------------------------------------#
 
 # Trivally small graph, will add benchmark graphs
-TEST_GRAPH= g10
+TEST_GRAPH ?= g10
 
 test/out/verify-%-$(TEST_GRAPH).out: %
-	./$* -g10 -vn1 > $@
+	./$* -$(TEST_GRAPH) -vn1 > $@
 
 .SECONDARY:
 test-verify-%-$(TEST_GRAPH): test/out/verify-%-$(TEST_GRAPH).out
