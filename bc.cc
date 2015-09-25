@@ -153,18 +153,90 @@ void PrintTopScores(const Graph &g, const pvector<ScoreT> &scores) {
 }
 
 
+// Still uses Brandes algorithm, but has the following differences:
+// - serial (no need for atomics or dynamic scheduling)
+// - uses vector for BFS queue
+// - regenerates farthest to closest traversal order from depths
+// - regenerates successors from depths
+bool BCVerifier(const Graph &g, SourcePicker<Graph> &sp, NodeID num_iters,
+                const pvector<ScoreT> &scores_to_test) {
+  pvector<ScoreT> scores(g.num_nodes(), 0);
+  for (int iter=0; iter < num_iters; iter++) {
+    NodeID source = sp.PickNext();
+    // BFS phase, only records depth & path_counts
+    pvector<int> depths(g.num_nodes(), -1);
+    depths[source] = 0;
+    vector<NodeID> path_counts(g.num_nodes(), 0);
+    path_counts[source] = 1;
+    vector<NodeID> to_visit;
+    to_visit.reserve(g.num_nodes());
+    to_visit.push_back(source);
+    for (auto it = to_visit.begin(); it != to_visit.end(); it++) {
+      NodeID u = *it;
+      for (NodeID v : g.out_neigh(u)) {
+        if (depths[v] == -1) {
+          depths[v] = depths[u] + 1;
+          to_visit.push_back(v);
+        }
+        if (depths[v] == depths[u] + 1)
+          path_counts[v] += path_counts[u];
+      }
+    }
+    // Get lists of vertices at each depth
+    vector<vector<NodeID>> verts_at_depth;
+    for (NodeID n=0; n < g.num_nodes(); n++) {
+      if (depths[n] != -1) {
+        if (depths[n] >= static_cast<int>(verts_at_depth.size()))
+          verts_at_depth.resize(depths[n] + 1);
+        verts_at_depth[depths[n]].push_back(n);
+      }
+    }
+    // Going from farthest to clostest, compute "depencies" (deltas)
+    pvector<ScoreT> deltas(g.num_nodes(), 0);
+    for (int depth=verts_at_depth.size()-1; depth >= 0; depth--) {
+      for (NodeID u : verts_at_depth[depth]) {
+        for (NodeID v : g.out_neigh(u)) {
+          if (depths[v] == depths[u] + 1) {
+            deltas[u] += static_cast<ScoreT>(path_counts[u]) /
+                         static_cast<ScoreT>(path_counts[v]) * (1 + deltas[v]);
+          }
+        }
+        scores[u] += deltas[u];
+      }
+    }
+  }
+  // Normalize scores
+  ScoreT biggest_score = *max_element(scores.begin(), scores.end());
+  for (NodeID n=0; n < g.num_nodes(); n++)
+    scores[n] = scores[n] / biggest_score;
+  // Compare scores
+  bool all_ok = true;
+  for (NodeID n=0; n < g.num_nodes(); n++) {
+    if (scores[n] != scores_to_test[n]) {
+      cout << n << ": " << scores[n] << " != " << scores_to_test[n] << endl;
+      all_ok = false;
+    }
+  }
+  return all_ok;
+}
+
+
 int main(int argc, char* argv[]) {
   CLIterApp cli(argc, argv, "betweenness-centrality", 1);
   if (!cli.ParseArgs())
     return -1;
-  if (cli.num_iters() > 1 && cli.start_vertex() != -1) {
+  if (cli.num_iters() > 1 && cli.start_vertex() != -1)
     cout << "Warning: iterating from same source (-r & -k)" << endl;
-  }
   Builder b(cli);
   Graph g = b.MakeGraph();
   SourcePicker<Graph> sp(g, cli.start_vertex());
   auto BCBound =
     [&sp, &cli] (const Graph &g) { return Brandes(g, sp, cli.num_iters()); };
-  BenchmarkKernel(cli, g, BCBound, PrintTopScores, VerifyUnimplemented);
+  SourcePicker<Graph> vsp(g, cli.start_vertex());
+  auto VerifierBound = [&vsp, &cli] (const Graph &g,
+                                     const pvector<ScoreT> &scores) {
+    return BCVerifier(g, vsp, cli.num_iters(), scores);
+  };
+  BenchmarkKernel(cli, g, BCBound, PrintTopScores, VerifierBound);
   return 0;
 }
