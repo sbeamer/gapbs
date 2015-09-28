@@ -14,7 +14,7 @@ SUITE = $(KERNELS) converter
 .PHONY: all
 all: $(SUITE)
 
-% : %.cc *.h
+% : src/%.cc src/*.h
 	$(CXX) $(CXX_FLAGS) $< -o $@$
 
 # Testing
