@@ -1,4 +1,4 @@
-GAP Benchmark Suite
+GAP Benchmark Suite [![Build Status](https://travis-ci.org/sbeamer/gapbs.svg)](https://travis-ci.org/sbeamer/gapbs)
 ===================
 
 This is a pre-release copy of the reference code for the upcoming [GAP](https://www.cs.berkeley.edu/~sbeamer/gap/) Benchmark Suite. It is designed to be a portable high-performance baseline. It only requires a compiler with support for C++11. For parallelism it uses OpenMP, but if the compiler lacks OpenMP support, it can also be compiled to run serially.
@@ -24,7 +24,11 @@ Override the default C++ compiler:
 
     $ CXX=g++4.9 make
 
-Run BFS on 1,000 vertices for 1 iteration:
+Test the build:
+
+    $ make test
+
+Run BFS on 1,024 vertices for 1 iteration:
 
     $ ./bfs -g 10 -n 1
 
@@ -51,7 +55,6 @@ The graph loading infrastructure understands the following formats:
 Future Features
 ---------------
 
-+ Re-add support for verifying results of kernels
 + Release integration support for OpenTuner
 + Ensure support for SunStudio compiler on SPARC
 + Scripts to perform official benchmark runs
