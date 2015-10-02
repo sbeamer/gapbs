@@ -1,7 +1,7 @@
 GAP Benchmark Suite [![Build Status](https://travis-ci.org/sbeamer/gapbs.svg)](https://travis-ci.org/sbeamer/gapbs)
 ===================
 
-This is a pre-release copy of the reference code for the upcoming [GAP](https://www.cs.berkeley.edu/~sbeamer/gap/) Benchmark Suite. It is designed to be a portable high-performance baseline. It only requires a compiler with support for C++11. For parallelism it uses OpenMP, but if the compiler lacks OpenMP support, it can also be compiled to run serially.
+This is a pre-release copy of the reference code for the upcoming [GAP](http://gap.cs.berkeley.edu/) Benchmark Suite. It is designed to be a portable high-performance baseline. It only requires a compiler with support for C++11. For parallelism it uses OpenMP, but if the compiler lacks OpenMP support, it can also be compiled to run serially.
 
 Kernels Included
 ----------------
@@ -58,3 +58,12 @@ Future Features
 + Release integration support for OpenTuner
 + Ensure support for SunStudio compiler on SPARC
 + Scripts to perform official benchmark runs
+
+
+
+How to Cite
+-----------
+
+Please cite this code by the benchmark specification:
+
+Scott Beamer, Krste Asanović, David Patterson. [*The GAP Benchmark Suite*](http://arxiv.org/abs/1508.03619). arXiv:1508.03619 [cs.DC], 2015.
