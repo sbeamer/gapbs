@@ -73,7 +73,7 @@ pvector<WeightT> DeltaStep(const WGraph &g, NodeID source, WeightT delta) {
       for (auto it = shared_bins[iter%2].begin();
            it < shared_bins[iter%2].end(); ++it) {
         NodeID u = *it;
-        if (dist[u] >= delta*curr_bin_index) {
+        if (dist[u] >= delta * static_cast<WeightT>(curr_bin_index)) {
           num_checks += g.out_degree(u);
           for (WNode wn : g.out_neigh(u)) {
             WeightT old_dist = dist[wn.v];
