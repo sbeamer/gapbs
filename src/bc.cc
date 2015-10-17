@@ -64,7 +64,7 @@ void PBFS(const Graph &g, NodeID source, pvector<NodeID> &path_counts,
       #pragma omp single
       depth_index.push_back(queue.begin());
       depth++;
-      #pragma omp for
+      #pragma omp for schedule(dynamic, 64)
       for (auto q_iter = queue.begin(); q_iter < queue.end(); q_iter++) {
         NodeID u = *q_iter;
         for (NodeID &v : g.out_neigh(u)) {
@@ -113,7 +113,7 @@ pvector<ScoreT> Brandes(const Graph &g, SourcePicker<Graph> &sp,
     pvector<ScoreT> deltas(g.num_nodes(), 0);
     t.Start();
     for (int d=depth_index.size()-2; d >= 0; d--) {
-      #pragma omp parallel for
+      #pragma omp parallel for schedule(dynamic, 64)
       for (auto it = depth_index[d]; it < depth_index[d+1]; it++) {
         NodeID u = *it;
         ScoreT delta_u = 0;
