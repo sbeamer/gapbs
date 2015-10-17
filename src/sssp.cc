@@ -57,24 +57,24 @@ pvector<WeightT> DeltaStep(const WGraph &g, NodeID source, WeightT delta) {
   Timer t;
   pvector<WeightT> dist(g.num_nodes(), kDistInf);
   dist[source] = 0;
-  // two element arrays for double buffering curr=iter%2, next=(iter+1)%2
+  // two element arrays for double buffering curr=iter&1, next=(iter+1)&1
   Bucket<NodeID> shared_bins[2];
   size_t shared_indexes[2] = {0, kDistInf};
   shared_bins[0].push_back(source);
-  int64_t num_checks = 0;
   t.Start();
-  #pragma omp parallel reduction(+ : num_checks)
+  #pragma omp parallel
   {
     vector<vector<NodeID>> local_bins;
     size_t iter = 0;
-    while (shared_indexes[iter%2] != kDistInf) {
-      size_t curr_bin_index = shared_indexes[iter%2];
+    while (shared_indexes[iter&1] != kDistInf) {
+      Bucket<NodeID> &curr_bin = shared_bins[iter&1];
+      Bucket<NodeID> &next_bin = shared_bins[(iter+1)&1];
+      size_t &curr_bin_index = shared_indexes[iter&1];
+      size_t &next_bin_index = shared_indexes[(iter+1)&1];
       #pragma omp for nowait schedule(dynamic, 64)
-      for (auto it = shared_bins[iter%2].begin();
-           it < shared_bins[iter%2].end(); ++it) {
+      for (auto it = curr_bin.begin(); it < curr_bin.end(); ++it) {
         NodeID u = *it;
         if (dist[u] >= delta * static_cast<WeightT>(curr_bin_index)) {
-          num_checks += g.out_degree(u);
           for (WNode wn : g.out_neigh(u)) {
             WeightT old_dist = dist[wn.v];
             WeightT new_dist = dist[u] + wn.w;
@@ -101,7 +101,7 @@ pvector<WeightT> DeltaStep(const WGraph &g, NodeID source, WeightT delta) {
       for (size_t i=curr_bin_index; i < local_bins.size(); i++) {
         if (!local_bins[i].empty()) {
           #pragma omp critical
-            shared_indexes[(iter+1)%2] = min(shared_indexes[(iter+1)%2], i);
+            next_bin_index = min(next_bin_index, i);
             break;
         }
       }
@@ -109,17 +109,18 @@ pvector<WeightT> DeltaStep(const WGraph &g, NodeID source, WeightT delta) {
       #pragma omp single nowait
       {
         t.Stop();
-        PrintStep(curr_bin_index, t.Millisecs(), shared_bins[iter%2].size());
+        PrintStep(curr_bin_index, t.Millisecs(), curr_bin.size());
         t.Start();
-        shared_bins[iter%2].clear();
-        shared_indexes[iter%2] = kDistInf;
+        curr_bin.clear();
+        curr_bin_index = kDistInf;
       }
-      if (shared_indexes[(iter+1)%2] < local_bins.size())
-        shared_bins[(iter+1)%2].swap_vector_in(
-            local_bins[shared_indexes[(iter+1)%2]]);
+      if (next_bin_index < local_bins.size())
+        next_bin.swap_vector_in(local_bins[next_bin_index]);
       iter++;
       #pragma omp barrier
     }
+    #pragma omp single
+    cout << "took " << iter << " iterations" << endl;
   }
   return dist;
 }
@@ -141,13 +142,11 @@ bool SSSPVerifier(const WGraph &g, NodeID source,
   typedef pair<WeightT, NodeID> WN;
   priority_queue<WN, vector<WN>, greater<WN>> mq;
   mq.push(make_pair(0, source));
-  int64_t num_checks = 0;
   while (!mq.empty()) {
     WeightT td = mq.top().first;
     NodeID u = mq.top().second;
     mq.pop();
     if (td == oracle_dist[u]) {
-      num_checks += g.out_degree(u);
       for (WNode wn : g.out_neigh(u)) {
         if (td + wn.w < oracle_dist[wn.v]) {
           oracle_dist[wn.v] = td + wn.w;
