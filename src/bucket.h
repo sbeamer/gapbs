@@ -149,7 +149,7 @@ class Bucket {
 
     bool operator <(const iterator &other) const {
       if (chunk_index_ == other.chunk_index_)
-        return chunk_offset_ == other.chunk_offset_;
+        return chunk_offset_ < other.chunk_offset_;
       else
         return chunk_index_ < other.chunk_index_;
     }
