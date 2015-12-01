@@ -8,6 +8,10 @@ endif
 
 CXX_FLAGS += -std=c++11 -O3 -Wall $(PAR_FLAG)
 
+ifneq (,$(findstring sunCC,$(CXX)))
+	CXX_FLAGS = -std=c++11 -xO3 -m64 -xtarget=native -xopenmp
+endif
+
 KERNELS = bc bfs cc pr sssp tc
 SUITE = $(KERNELS) converter
 
