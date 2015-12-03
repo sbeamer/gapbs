@@ -7,6 +7,7 @@
 #include <iostream>
 #include <fstream>
 #include <string>
+#include <sstream>
 #include <type_traits>
 
 #include "util.h"
@@ -82,6 +83,30 @@ class Reader {
     return el;
   }
 
+  EdgeList ReadInGraph(std::ifstream &in) {
+    EdgeList el;
+    NodeID_ NodeNum;
+    NodeID_ EdgeNum;
+    NodeID_ u;
+    std::string line;
+
+    std::getline(in, line, '\n');
+    std::istringstream headlineStream(line);
+    headlineStream >> NodeNum >> EdgeNum;
+
+    for (NodeID_ i = 0; i < NodeNum; i++) {
+      std::string eline;
+      std::getline(in, eline);
+      std::istringstream lineStream(eline);
+
+      while (!lineStream.eof()) {
+        lineStream >> u;
+        el.push_back(Edge(i, u-1));
+      }
+    }
+    return el;
+  }
+
   EdgeList ReadFile(bool &needs_weights) {
     Timer t;
     t.Start();
@@ -100,6 +125,9 @@ class Reader {
     } else if (suffix == ".gr") {
       needs_weights = false;
       el = ReadInGR(file);
+    } else if (suffix == ".graph") {
+      needs_weights = false;
+      el = ReadInGraph(file);
     } else {
       std::cout << "Unrecognized suffix: " << suffix << std::endl;
       std::exit(-3);
