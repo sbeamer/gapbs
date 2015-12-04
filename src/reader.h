@@ -83,27 +83,61 @@ class Reader {
     return el;
   }
 
-  EdgeList ReadInGraph(std::ifstream &in) {
+  // converts vertex numbering from 1..N to 0..N-1
+  EdgeList ReadInMetis(std::ifstream &in, bool &needs_weights) {
     EdgeList el;
-    NodeID_ NodeNum;
-    NodeID_ EdgeNum;
-    NodeID_ u;
+    NodeID_ num_nodes, num_edges;
+    char c;
     std::string line;
-
-    std::getline(in, line, '\n');
-    std::istringstream headlineStream(line);
-    headlineStream >> NodeNum >> EdgeNum;
-
-    for (NodeID_ i = 0; i < NodeNum; i++) {
-      std::string eline;
-      std::getline(in, eline);
-      std::istringstream lineStream(eline);
-
-      while (!lineStream.eof()) {
-        lineStream >> u;
-        el.push_back(Edge(i, u-1));
+    bool read_weights = false;
+    while (true) {
+      c = in.peek();
+      if (c == '%') {
+        in.ignore(200, '\n');
+      } else {
+        std::getline(in, line, '\n');
+        std::istringstream header_stream(line);
+        header_stream >> num_nodes >> num_edges;
+        header_stream >> std::ws;
+        if (!header_stream.eof()) {
+          int32_t fmt;
+          header_stream >> fmt;
+          if (fmt == 1) {
+            read_weights = true;
+          } else if ((fmt != 0) && (fmt != 100)) {
+            std::cout << "Do not support METIS fmt type: " << fmt << std::endl;
+            std::exit(-20);
+          }
+        }
+        break;
       }
     }
+    NodeID_ u = 0;
+    while (u < num_nodes) {
+      c = in.peek();
+      if (c == '%') {
+        in.ignore(200, '\n');
+      } else {
+        std::getline(in, line);
+        std::istringstream edge_stream(line);
+        if (read_weights) {
+          NodeWeight<NodeID_, WeightT_> v;
+          while (!edge_stream.eof()) {
+            edge_stream >> v;
+            v.v -= 1;
+            el.push_back(Edge(u, v));
+          }
+        } else {
+          while (!edge_stream.eof()) {
+            NodeID_ v;
+            edge_stream >> v;
+            el.push_back(Edge(u, v - 1));
+          }
+        }
+        u++;
+      }
+    }
+    needs_weights = !read_weights;
     return el;
   }
 
@@ -126,8 +160,7 @@ class Reader {
       needs_weights = false;
       el = ReadInGR(file);
     } else if (suffix == ".graph") {
-      needs_weights = false;
-      el = ReadInGraph(file);
+      el = ReadInMetis(file, needs_weights);
     } else {
       std::cout << "Unrecognized suffix: " << suffix << std::endl;
       std::exit(-3);
