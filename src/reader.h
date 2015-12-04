@@ -119,19 +119,23 @@ class Reader {
         in.ignore(200, '\n');
       } else {
         std::getline(in, line);
-        std::istringstream edge_stream(line);
-        if (read_weights) {
-          NodeWeight<NodeID_, WeightT_> v;
-          while (!edge_stream.eof()) {
-            edge_stream >> v;
-            v.v -= 1;
-            el.push_back(Edge(u, v));
-          }
-        } else {
-          while (!edge_stream.eof()) {
+        if (line != "") {
+          std::istringstream edge_stream(line);
+          if (read_weights) {
+            NodeWeight<NodeID_, WeightT_> v;
+            while (!edge_stream.eof()) {
+              edge_stream >> v;
+              edge_stream >> std::ws;
+              v.v -= 1;
+              el.push_back(Edge(u, v));
+            }
+          } else {
             NodeID_ v;
-            edge_stream >> v;
-            el.push_back(Edge(u, v - 1));
+            while (!edge_stream.eof()) {
+              edge_stream >> v;
+              edge_stream >> std::ws;
+              el.push_back(Edge(u, v - 1));
+            }
           }
         }
         u++;

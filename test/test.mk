@@ -52,7 +52,8 @@ test-generate-%: test/out/generate-%.out
 	fi
 
 # Loading graphs from files
-test-load: test-load-4.gr test-load-4.el test-load-4.wel
+test-load: test-load-4.gr test-load-4.el test-load-4.wel test-load-4.graph \
+					 test-load-4w.graph
 
 test/out/load-%.out: test/out $(GENERATE_KERNEL)
 	./$(GENERATE_KERNEL) -f test/graphs/$* -n0 > $@
