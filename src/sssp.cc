@@ -8,7 +8,6 @@
 #include <vector>
 
 #include "benchmark.h"
-#include "bucket.h"
 #include "builder.h"
 #include "command_line.h"
 #include "graph.h"
@@ -29,14 +28,13 @@ used for weights and distances (WeightT) is typedefined in benchmark.h. The
 delta parameter (-d) should be set for each input graph.
 
 The bins of width delta are actually all thread-local and of type std::vector
-so they can grow but are otherwise capacity-proportional. The currently
-processed bin makes use of the Bucket object and is generated right before it
-is used. Each iteration is done in two phases separated by barriers. In the
-first phase, the current shared bin is processed by all threads. As they
-find vertices whose distance they are able to improve, they add them to their
-thread-local bins. During this phase, each thread also votes on what the next
-bin should be (smallest non-empty bin). In the next phase, each thread moves
-their selected thread-local bin into the shared bin.
+so they can grow but are otherwise capacity-proportional. Each iteration is
+done in two phases separated by barriers. In the first phase, the current
+shared bin is processed by all threads. As they find vertices whose distance
+they are able to improve, they add them to their thread-local bins. During this
+phase, each thread also votes on what the next bin should be (smallest
+non-empty bin). In the next phase, each thread copies their selected
+thread-local bin into the shared bin.
 
 Once a vertex is added to a bin, it is not removed, even if its distance is
 later updated and it now appears in a lower bin. We find ignoring vertices if
@@ -57,23 +55,24 @@ pvector<WeightT> DeltaStep(const WGraph &g, NodeID source, WeightT delta) {
   Timer t;
   pvector<WeightT> dist(g.num_nodes(), kDistInf);
   dist[source] = 0;
+  pvector<NodeID> frontier(g.num_edges_directed());
   // two element arrays for double buffering curr=iter&1, next=(iter+1)&1
-  Bucket<NodeID> shared_bins[2];
   size_t shared_indexes[2] = {0, kDistInf};
-  shared_bins[0].push_back(source);
+  size_t frontier_tails[2] = {1, 0};
+  frontier[0] = source;
   t.Start();
   #pragma omp parallel
   {
-    vector<vector<NodeID>> local_bins;
+    vector<vector<NodeID> > local_bins(0);
     size_t iter = 0;
     while (shared_indexes[iter&1] != kDistInf) {
-      Bucket<NodeID> &curr_bin = shared_bins[iter&1];
-      Bucket<NodeID> &next_bin = shared_bins[(iter+1)&1];
       size_t &curr_bin_index = shared_indexes[iter&1];
       size_t &next_bin_index = shared_indexes[(iter+1)&1];
+      size_t &curr_frontier_tail = frontier_tails[iter&1];
+      size_t &next_frontier_tail = frontier_tails[(iter+1)&1];
       #pragma omp for nowait schedule(dynamic, 64)
-      for (auto it = curr_bin.begin(); it < curr_bin.end(); ++it) {
-        NodeID u = *it;
+      for (size_t i=0; i < curr_frontier_tail; i++) {
+        NodeID u = frontier[i];
         if (dist[u] >= delta * static_cast<WeightT>(curr_bin_index)) {
           for (WNode wn : g.out_neigh(u)) {
             WeightT old_dist = dist[wn.v];
@@ -101,21 +100,26 @@ pvector<WeightT> DeltaStep(const WGraph &g, NodeID source, WeightT delta) {
       for (size_t i=curr_bin_index; i < local_bins.size(); i++) {
         if (!local_bins[i].empty()) {
           #pragma omp critical
-            next_bin_index = min(next_bin_index, i);
-            break;
+          next_bin_index = min(next_bin_index, i);
+          break;
         }
       }
       #pragma omp barrier
       #pragma omp single nowait
       {
         t.Stop();
-        PrintStep(curr_bin_index, t.Millisecs(), curr_bin.size());
+        PrintStep(curr_bin_index, t.Millisecs(), curr_frontier_tail);
         t.Start();
-        curr_bin.clear();
         curr_bin_index = kDistInf;
+        curr_frontier_tail = 0;
       }
-      if (next_bin_index < local_bins.size())
-        next_bin.swap_vector_in(local_bins[next_bin_index]);
+      if (next_bin_index < local_bins.size()) {
+        size_t copy_start = fetch_and_add(next_frontier_tail,
+                                          local_bins[next_bin_index].size());
+        copy(local_bins[next_bin_index].begin(),
+             local_bins[next_bin_index].end(), frontier.data() + copy_start);
+        local_bins[next_bin_index].resize(0);
+      }
       iter++;
       #pragma omp barrier
     }
