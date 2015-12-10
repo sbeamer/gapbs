@@ -6,8 +6,8 @@
 
 #include <iostream>
 #include <fstream>
-#include <string>
 #include <sstream>
+#include <string>
 #include <type_traits>
 
 #include "util.h"
@@ -83,7 +83,7 @@ class Reader {
     return el;
   }
 
-  // converts vertex numbering from 1..N to 0..N-1
+  // Note: converts vertex numbering from 1..N to 0..N-1
   EdgeList ReadInMetis(std::ifstream &in, bool &needs_weights) {
     EdgeList el;
     NodeID_ num_nodes, num_edges;
@@ -123,22 +123,93 @@ class Reader {
           std::istringstream edge_stream(line);
           if (read_weights) {
             NodeWeight<NodeID_, WeightT_> v;
-            while (!edge_stream.eof()) {
-              edge_stream >> v;
-              edge_stream >> std::ws;
+            while (edge_stream >> v >> std::ws) {
               v.v -= 1;
               el.push_back(Edge(u, v));
             }
           } else {
             NodeID_ v;
-            while (!edge_stream.eof()) {
-              edge_stream >> v;
-              edge_stream >> std::ws;
+            while (edge_stream >> v >> std::ws) {
               el.push_back(Edge(u, v - 1));
             }
           }
         }
         u++;
+      }
+    }
+    needs_weights = !read_weights;
+    return el;
+  }
+
+  // Note: converts vertex numbering from 1..N to 0..N-1
+  // Note: weights casted to type WeightT_
+  EdgeList ReadInMTX(std::ifstream &in, bool &needs_weights) {
+    EdgeList el;
+    std::string start, object, format, field, symmetry, line;
+    in >> start >> object >> format >> field >> symmetry >> std::ws;
+    if (start != "%%MatrixMarket") {
+      std::cout << ".mtx file did not start with %%MatrixMarket" << std::endl;
+      std::exit(-21);
+    }
+    if ((object != "matrix") || (format != "coordinate")) {
+      std::cout << "only allow matrix coordinate format for .mtx" << std::endl;
+      std::exit(-22);
+    }
+    if (field == "complex") {
+      std::cout << "do not support complex weights for .mtx" << std::endl;
+      std::exit(-23);
+    }
+    bool read_weights;
+    if (field == "pattern") {
+      read_weights = false;
+    } else if ((field == "real") || (field == "double") ||
+               (field == "integer")) {
+      read_weights = true;
+    } else {
+      std::cout << "unrecognized field type for .mtx" << std::endl;
+      std::exit(-24);
+    }
+    bool undirected;
+    if (symmetry == "symmetric") {
+      undirected = true;
+    } else if ((symmetry == "general") || (symmetry == "skew-symmetric")) {
+      undirected = false;
+    } else {
+      std::cout << "unsupported symmetry type for .mtx" << std::endl;
+      std::exit(-25);
+    }
+    while (true) {
+      char c = in.peek();
+      if (c == '%') {
+        in.ignore(200, '\n');
+      } else {
+        break;
+      }
+    }
+    int64_t m, n, nonzeros;
+    in >> m >> n >> nonzeros >> std::ws;
+    if (m != n) {
+      std::cout << m << " " << n << " " << nonzeros << std::endl;
+      std::cout << "matrix must be square for .mtx" << std::endl;
+      std::exit(-26);
+    }
+    while (std::getline(in, line)) {
+      std::istringstream edge_stream(line);
+      NodeID_ u;
+      edge_stream >> u;
+      if (read_weights) {
+        NodeWeight<NodeID_, WeightT_> v;
+        edge_stream >> v;
+        v.v -= 1;
+        el.push_back(Edge(u - 1, v));
+        if (undirected)
+          el.push_back(Edge(v, u - 1));
+      } else {
+        NodeID_ v;
+        edge_stream >> v;
+        el.push_back(Edge(u - 1, v - 1));
+        if (undirected)
+          el.push_back(Edge(v - 1, u - 1));
       }
     }
     needs_weights = !read_weights;
@@ -165,6 +236,8 @@ class Reader {
       el = ReadInGR(file);
     } else if (suffix == ".graph") {
       el = ReadInMetis(file, needs_weights);
+    } else if (suffix == ".mtx") {
+      el = ReadInMTX(file, needs_weights);
     } else {
       std::cout << "Unrecognized suffix: " << suffix << std::endl;
       std::exit(-3);
