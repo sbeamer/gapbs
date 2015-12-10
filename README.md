@@ -1,7 +1,7 @@
 GAP Benchmark Suite [![Build Status](https://travis-ci.org/sbeamer/gapbs.svg)](https://travis-ci.org/sbeamer/gapbs)
 ===================
 
-This is a pre-release copy of the reference code for the upcoming [GAP](http://gap.cs.berkeley.edu/) Benchmark Suite. It is designed to be a portable high-performance baseline. It only requires a compiler with support for C++11. For parallelism it uses OpenMP, but if the compiler lacks OpenMP support, it can also be compiled to run serially.
+This is a pre-release copy of the reference code for the upcoming [GAP](http://gap.cs.berkeley.edu/) [Benchmark Suite](http://gap.cs.berkeley.edu/benchmark.html). It is designed to be a portable high-performance baseline. It only requires a compiler with support for C++11. For parallelism it uses OpenMP, but if the compiler lacks OpenMP support, it can also be compiled to run serially.
 
 Kernels Included
 ----------------
@@ -22,7 +22,7 @@ Build the project:
 
 Override the default C++ compiler:
 
-    $ CXX=g++4.9 make
+    $ CXX=g++-4.9 make
 
 Test the build:
 
@@ -47,7 +47,9 @@ All of the binaries use the same command-line options for loading graphs:
 The graph loading infrastructure understands the following formats:
 + `.el` plain-text edge-list with an edge per line as _node1_ _node2_
 + `.wel` plain-text weighted edge-list with an edge per line as _node1_ _node2_ _weight_
-+ `.gr` DIMACS Grand Challenge format
++ `.gr` [9th DIMACS Implementation Challenge](http://www.dis.uniroma1.it/challenge9/download.shtml) format
++ `.graph` Metis format (used in [10th DIMACS Implementation Challenge](http://www.cc.gatech.edu/dimacs10/index.shtml))
++ `.mtx` [Matrix Market](http://math.nist.gov/MatrixMarket/formats.html) format
 + `.sg` serialized pre-built graph (use `converter` to make)
 + `.wsg` weighted serialized pre-built graph (use `converter` to make)
 
@@ -56,7 +58,6 @@ Future Features
 ---------------
 
 + Release integration support for OpenTuner
-+ Ensure support for SunStudio compiler on SPARC
 + Scripts to perform official benchmark runs
 
 
