@@ -65,7 +65,7 @@ pvector<WeightT> DeltaStep(const WGraph &g, NodeID source, WeightT delta) {
   {
     vector<vector<NodeID> > local_bins(0);
     size_t iter = 0;
-    while (shared_indexes[iter&1] != kDistInf) {
+    while (static_cast<WeightT>(shared_indexes[iter&1]) != kDistInf) {
       size_t &curr_bin_index = shared_indexes[iter&1];
       size_t &next_bin_index = shared_indexes[(iter+1)&1];
       size_t &curr_frontier_tail = frontier_tails[iter&1];
