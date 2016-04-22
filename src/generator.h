@@ -9,8 +9,8 @@
 #include <random>
 
 #include "graph.h"
-#include "util.h"
 #include "pvector.h"
+#include "util.h"
 
 
 /*

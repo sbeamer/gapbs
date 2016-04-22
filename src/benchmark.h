@@ -13,8 +13,8 @@
 
 #include "builder.h"
 #include "graph.h"
-#include "util.h"
 #include "timer.h"
+#include "util.h"
 #include "writer.h"
 
 
