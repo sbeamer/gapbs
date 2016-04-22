@@ -46,7 +46,7 @@ class CLBase {
       opt_arg = "<" + opt_arg + ">";
     if (def != "")
       def = "[" + def + "]";
-    snprintf(buf, kBufLen, " -%c %-9s: %-57s%7s", opt, opt_arg.c_str(),
+    snprintf(buf, kBufLen, " -%c %-9s: %-54s%10s", opt, opt_arg.c_str(),
             text.c_str(), def.c_str());
     help_strings_.push_back(buf);
   }
@@ -161,6 +161,34 @@ class CLIterApp : public CLApp {
 
 
 
+class CLPageRank : public CLApp {
+  int max_iters_;
+  double tolerance_;
+
+ public:
+  CLPageRank(int argc, char** argv, std::string name, double tolerance,
+             int max_iters) :
+    CLApp(argc, argv, name), max_iters_(max_iters), tolerance_(tolerance) {
+    get_args_ += "i:t:";
+    AddHelpLine('i', "i", "perform at most i iterations",
+                std::to_string(max_iters_));
+    AddHelpLine('t', "t", "use tolerance t", std::to_string(tolerance_));
+  }
+
+  void HandleArg(signed char opt, char* opt_arg) override {
+    switch (opt) {
+      case 'i': max_iters_ = atoi(opt_arg);            break;
+      case 't': tolerance_ = std::stod(opt_arg);            break;
+      default: CLApp::HandleArg(opt, opt_arg);
+    }
+  }
+
+  int max_iters() const { return max_iters_; }
+  double tolerance() const { return tolerance_; }
+};
+
+
+
 class CLDelta : public CLApp {
   int delta_ = 1;
 
@@ -201,7 +229,7 @@ class CLConvert : public CLBase {
     switch (opt) {
       case 'b': out_sg_ = true; out_filename_ = std::string(opt_arg);   break;
       case 'e': out_el_ = true; out_filename_ = std::string(opt_arg);   break;
-      case 'w': out_weighted_ = true;                               break;
+      case 'w': out_weighted_ = true;                                   break;
       default: CLBase::HandleArg(opt, opt_arg);
     }
   }

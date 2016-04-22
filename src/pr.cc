@@ -30,7 +30,6 @@ using namespace std;
 
 typedef float ScoreT;
 const float kDamp = 0.85;
-const double kGoalEpsilon = 1e-4;
 
 pvector<ScoreT> PageRankPull(const Graph &g, int max_iters,
                              double epsilon = 0) {
@@ -95,16 +94,16 @@ bool PRVerifier(const Graph &g, const pvector<ScoreT> &scores,
 
 
 int main(int argc, char* argv[]) {
-  CLIterApp cli(argc, argv, "pagerank", 20);
+  CLPageRank cli(argc, argv, "pagerank", 1e-4, 20);
   if (!cli.ParseArgs())
     return -1;
   Builder b(cli);
   Graph g = b.MakeGraph();
   auto PRBound = [&cli] (const Graph &g) {
-    return PageRankPull(g, cli.num_iters(), kGoalEpsilon);
+    return PageRankPull(g, cli.max_iters(), cli.tolerance());
   };
-  auto VerifierBound = [] (const Graph &g, const pvector<ScoreT> &scores) {
-    return PRVerifier(g, scores, kGoalEpsilon);
+  auto VerifierBound = [&cli] (const Graph &g, const pvector<ScoreT> &scores) {
+    return PRVerifier(g, scores, cli.tolerance());
   };
   BenchmarkKernel(cli, g, PRBound, PrintTopScores, VerifierBound);
   return 0;
