@@ -115,10 +115,10 @@ class CLApp : public CLBase {
  public:
   CLApp(int argc, char** argv, std::string name) : CLBase(argc, argv, name) {
     get_args_ += "an:r:v";
-    AddHelpLine('a', "a", "output analysis of last run", "false");
+    AddHelpLine('a', "", "output analysis of last run", "false");
     AddHelpLine('n', "n", "perform n trials", std::to_string(num_trials_));
     AddHelpLine('r', "node", "start from node r", "rand");
-    AddHelpLine('v', "v", "verify the output of each run", "false");
+    AddHelpLine('v', "", "verify the output of each run", "false");
   }
 
   void HandleArg(signed char opt, char* opt_arg) override {
