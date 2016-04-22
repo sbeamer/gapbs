@@ -20,14 +20,10 @@ Parallel bitmap that is thread-safe
 */
 
 
-const uint64_t bits_per_word = 64;
-uint64_t word_offset(size_t n) { return n/bits_per_word; }
-uint64_t bit_offset(size_t n) { return n & (bits_per_word-1); }
-
 class Bitmap {
  public:
   explicit Bitmap(size_t size) {
-    uint64_t num_words = (size + bits_per_word - 1) / bits_per_word;
+    uint64_t num_words = (size + kBitsPerWord - 1) / kBitsPerWord;
     start_ = new uint64_t[num_words];
     end_ = start_ + num_words;
   }
@@ -64,6 +60,10 @@ class Bitmap {
  private:
   uint64_t *start_;
   uint64_t *end_;
+
+  static const uint64_t kBitsPerWord = 64;
+  static uint64_t word_offset(size_t n) { return n / kBitsPerWord; }
+  static uint64_t bit_offset(size_t n) { return n & (kBitsPerWord - 1); }
 };
 
 #endif  // BITMAP_H_
