@@ -121,7 +121,7 @@ pvector<NodeID> InitParent(const Graph &g) {
 
 pvector<NodeID> DOBFS(const Graph &g, NodeID source, int alpha = 26,
                       int beta = 72) {
-  cout << "source: " << source << endl;
+  PrintStep("Source", static_cast<int64_t>(source));
   Timer t;
   t.Start();
   pvector<NodeID> parent = InitParent(g);
@@ -139,17 +139,20 @@ pvector<NodeID> DOBFS(const Graph &g, NodeID source, int alpha = 26,
   int64_t scout_count = g.out_degree(source);
   while (!queue.empty()) {
     if (scout_count > edges_to_check / alpha) {
-      int64_t awake_count;
+      int64_t awake_count, old_awake_count;
       TIME_OP(t, QueueToBitmap(queue, front));
       PrintStep("e", t.Seconds());
+      awake_count = queue.size();
       queue.slide_window();
       do {
         t.Start();
+        old_awake_count = awake_count;
         awake_count = BUStep(g, parent, front, curr);
         front.swap(curr);
         t.Stop();
         PrintStep("bu", t.Seconds(), awake_count);
-      } while (awake_count > g.num_nodes() / beta);
+      } while ((awake_count >= old_awake_count) ||
+               (awake_count > g.num_nodes() / beta));
       TIME_OP(t, BitmapToQueue(g, front, queue));
       PrintStep("c", t.Seconds());
       scout_count = 1;
