@@ -119,8 +119,8 @@ pvector<NodeID> InitParent(const Graph &g) {
   return parent;
 }
 
-pvector<NodeID> DOBFS(const Graph &g, NodeID source, int alpha = 26,
-                      int beta = 72) {
+pvector<NodeID> DOBFS(const Graph &g, NodeID source, int alpha = 15,
+                      int beta = 18) {
   PrintStep("Source", static_cast<int64_t>(source));
   Timer t;
   t.Start();
