@@ -194,17 +194,39 @@ bool BFSVerifier(const Graph &g, NodeID source,
   to_visit.push_back(source);
   for (auto it = to_visit.begin(); it != to_visit.end(); it++) {
     NodeID u = *it;
-    bool parent_has_depth_one_less = false;
     for (NodeID v : g.out_neigh(u)) {
       if (depth[v] == -1) {
         depth[v] = depth[u] + 1;
         to_visit.push_back(v);
-      } else if ((v == parent[u]) && (depth[v] == depth[u] - 1)) {
-        parent_has_depth_one_less = true;
       }
     }
-    if (!parent_has_depth_one_less && !((u == source) && (parent[u] == u))) {
-      cout << u << " " << parent[u] << endl;
+  }
+  for (NodeID u=0; u < g.num_nodes(); u++) {
+    if ((depth[u] != -1) && (parent[u] != -1)) {
+      if (u == source) {
+        if (!((parent[u] == u) && (depth[u] == 0))) {
+          cout << "Source wrong" << endl;
+          return false;
+        }
+        continue;
+      }
+      bool parent_found = false;
+      for (NodeID v : g.in_neigh(u)) {
+        if (v == parent[u]) {
+          if (depth[v] != depth[u] - 1) {
+            cout << "Wrong depths for " << u << " & " << v << endl;
+            return false;
+          }
+          parent_found = true;
+          break;
+        }
+      }
+      if (!parent_found) {
+        cout << "Couldn't find edge from " << parent[u] << " to " << u << endl;
+        return false;
+      }
+    } else if (depth[u] != parent[u]) {
+      cout << "Reachability mismatch" << endl;
       return false;
     }
   }
