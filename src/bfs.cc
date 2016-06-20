@@ -172,7 +172,7 @@ pvector<NodeID> DOBFS(const Graph &g, NodeID source, int alpha = 15,
 void PrintBFSStats(const Graph &g, const pvector<NodeID> &bfs_tree) {
   int64_t tree_size = 0;
   int64_t n_edges = 0;
-  for (NodeID n=0; n < g.num_nodes(); n++) {
+  for (NodeID n : g.vertices()) {
     if (bfs_tree[n] >= 0) {
       n_edges += g.out_degree(n);
       tree_size++;
@@ -204,7 +204,7 @@ bool BFSVerifier(const Graph &g, NodeID source,
       }
     }
   }
-  for (NodeID u=0; u < g.num_nodes(); u++) {
+  for (NodeID u : g.vertices()) {
     if ((depth[u] != -1) && (parent[u] != -1)) {
       if (u == source) {
         if (!((parent[u] == u) && (depth[u] == 0))) {

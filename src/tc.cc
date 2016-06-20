@@ -105,7 +105,7 @@ bool TCVerifier(const Graph &g, size_t test_total) {
   size_t total = 0;
   vector<NodeID> intersection;
   intersection.reserve(g.num_nodes());
-  for (NodeID u=0; u < g.num_nodes(); u++) {
+  for (NodeID u : g.vertices()) {
     for (NodeID v : g.out_neigh(u)) {
       auto new_end = set_intersection(g.out_neigh(u).begin(),
                                       g.out_neigh(u).end(),

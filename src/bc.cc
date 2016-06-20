@@ -144,7 +144,7 @@ pvector<ScoreT> Brandes(const Graph &g, SourcePicker<Graph> &sp,
 
 void PrintTopScores(const Graph &g, const pvector<ScoreT> &scores) {
   vector<pair<NodeID, ScoreT>> score_pairs(g.num_nodes());
-  for (NodeID n=0; n < g.num_nodes(); n++)
+  for (NodeID n : g.vertices())
     score_pairs[n] = make_pair(n, scores[n]);
   int k = 5;
   vector<pair<ScoreT, NodeID>> top_k = TopK(score_pairs, k);
@@ -184,7 +184,7 @@ bool BCVerifier(const Graph &g, SourcePicker<Graph> &sp, NodeID num_iters,
     }
     // Get lists of vertices at each depth
     vector<vector<NodeID>> verts_at_depth;
-    for (NodeID n=0; n < g.num_nodes(); n++) {
+    for (NodeID n : g.vertices()) {
       if (depths[n] != -1) {
         if (depths[n] >= static_cast<int>(verts_at_depth.size()))
           verts_at_depth.resize(depths[n] + 1);
@@ -207,11 +207,11 @@ bool BCVerifier(const Graph &g, SourcePicker<Graph> &sp, NodeID num_iters,
   }
   // Normalize scores
   ScoreT biggest_score = *max_element(scores.begin(), scores.end());
-  for (NodeID n=0; n < g.num_nodes(); n++)
+  for (NodeID n : g.vertices())
     scores[n] = scores[n] / biggest_score;
   // Compare scores
   bool all_ok = true;
-  for (NodeID n=0; n < g.num_nodes(); n++) {
+  for (NodeID n : g.vertices()) {
     if (scores[n] != scores_to_test[n]) {
       cout << n << ": " << scores[n] << " != " << scores_to_test[n] << endl;
       all_ok = false;

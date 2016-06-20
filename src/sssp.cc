@@ -161,7 +161,7 @@ bool SSSPVerifier(const WGraph &g, NodeID source,
   }
   // Report any mismatches
   bool all_ok = true;
-  for (NodeID n=0; n < g.num_nodes(); n++) {
+  for (NodeID n : g.vertices()) {
     if (dist_to_test[n] != oracle_dist[n]) {
       cout << n << ": " << dist_to_test[n] << " != " << oracle_dist[n] << endl;
       all_ok = false;

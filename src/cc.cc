@@ -93,7 +93,7 @@ void PrintCompStats(const Graph &g, const pvector<NodeID> &comp) {
 // - Asserts every vertex is visited (degree-0 vertex should have own label)
 bool CCVerifier(const Graph &g, const pvector<NodeID> &comp) {
   unordered_map<NodeID, NodeID> label_to_source;
-  for (NodeID n=0; n < g.num_nodes(); n++)
+  for (NodeID n : g.vertices())
     label_to_source[comp[n]] = n;
   Bitmap visited(g.num_nodes());
   visited.reset();

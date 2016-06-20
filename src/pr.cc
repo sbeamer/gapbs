@@ -79,12 +79,12 @@ bool PRVerifier(const Graph &g, const pvector<ScoreT> &scores,
   const ScoreT base_score = (1.0f - kDamp) / g.num_nodes();
   pvector<ScoreT> incomming_sums(g.num_nodes(), 0);
   double error = 0;
-  for (NodeID u=0; u < g.num_nodes(); u++) {
+  for (NodeID u : g.vertices()) {
     ScoreT outgoing_contrib = scores[u] / g.out_degree(u);
     for (NodeID v : g.out_neigh(u))
       incomming_sums[v] += outgoing_contrib;
   }
-  for (NodeID n=0; n < g.num_nodes(); n++) {
+  for (NodeID n : g.vertices()) {
     error += fabs(base_score + kDamp * incomming_sums[n] - scores[n]);
     incomming_sums[n] = 0;
   }
