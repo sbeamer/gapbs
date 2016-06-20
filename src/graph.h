@@ -239,6 +239,10 @@ class CSRGraph {
     return offsets;
   }
 
+  Range<NodeID_> vertices() const {
+    return Range<NodeID_>(num_nodes());
+  }
+
  private:
   bool directed_;
   int64_t num_nodes_;

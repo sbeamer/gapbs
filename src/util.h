@@ -53,4 +53,29 @@ void PrintStep(const std::string &s, double seconds, int64_t count = -1) {
   PrintTime(label, t_.Seconds()); \
 }
 
+
+template <typename T_>
+class RangeIter {
+  T_ x_;
+ public:
+  explicit RangeIter(T_ x) : x_(x) {}
+  bool operator!=(RangeIter const& other) const { return x_ != other.x_; }
+  T_ const& operator*() const { return x_; }
+  RangeIter& operator++() {
+    ++x_;
+    return *this;
+  }
+};
+
+template <typename T_>
+class Range{
+  T_ from_;
+  T_ to_;
+ public:
+  explicit Range(T_ to) : from_(0), to_(to) {}
+  Range(T_ from, T_ to) : from_(from), to_(to) {}
+  RangeIter<T_> begin() const { return RangeIter<T_>(from_); }
+  RangeIter<T_> end() const { return RangeIter<T_>(to_); }
+};
+
 #endif  // UTIL_H_
