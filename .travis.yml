@@ -10,15 +10,15 @@ matrix:
           packages:
             - g++-4.7
       env: CXX=g++-4.7
-    - compiler: clang
-      addons:
-        apt:
-          sources:
-            - ubuntu-toolchain-r-test
-            - llvm-toolchain-precise-3.7
-          packages:
-            - clang-3.7
-      env: CXX=clang++-3.7 SERIAL=1
+    # - compiler: clang
+    #   addons:
+    #     apt:
+    #       sources:
+    #         - ubuntu-toolchain-r-test
+    #         - llvm-toolchain-precise-3.7
+    #       packages:
+    #         - clang-3.7
+    #   env: CXX=clang++-3.7 SERIAL=1
 script:
   - make -j
   - make test
