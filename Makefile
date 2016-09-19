@@ -23,7 +23,7 @@ SUITE = $(KERNELS) converter
 all: $(SUITE)
 
 % : src/%.cc src/*.h
-	$(CXX) $(CXX_FLAGS) $< -o $@$
+	$(CXX) $(CXX_FLAGS) $< -o $@
 
 # Testing
 include test/test.mk
