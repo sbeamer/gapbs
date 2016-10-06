@@ -49,10 +49,12 @@ pvector<NodeID> ShiloachVishkin(const Graph &g) {
     num_iter++;
     #pragma omp parallel for
     for (NodeID u=0; u < g.num_nodes(); u++) {
+      NodeID comp_u = comp[u];
       for (NodeID v : g.out_neigh(u)) {
-        if ((comp[u] < comp[v]) && (comp[v] == comp[comp[v]])) {
+        NodeID comp_v = comp[v];      
+        if ((comp_u < comp_v) && (comp_v == comp[comp_v])) {
           change = true;
-          comp[comp[v]] = comp[u];
+          comp[comp_v] = comp_u;
         }
       }
     }
