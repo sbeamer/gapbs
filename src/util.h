@@ -30,6 +30,10 @@ void PrintTime(const std::string &s, double seconds) {
   printf("%-21s%3.5lf\n", (s + ":").c_str(), seconds);
 }
 
+void PrintStep(const std::string &s, int64_t count) {
+  printf("%-14s%14" PRId64 "\n", (s + ":").c_str(), count);
+}
+
 void PrintStep(int step, double seconds, int64_t count = -1) {
   if (count != -1)
     printf("%5d%11" PRId64 "  %10.5lf\n", step, count, seconds);
