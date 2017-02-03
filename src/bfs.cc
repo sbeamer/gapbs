@@ -165,6 +165,10 @@ pvector<NodeID> DOBFS(const Graph &g, NodeID source, int alpha = 15,
       PrintStep("td", t.Seconds(), queue.size());
     }
   }
+  #pragma omp parallel for
+  for (NodeID n = 0; n < g.num_nodes(); n++)
+    if (parent[n] < -1)
+      parent[n] = -1;
   return parent;
 }
 
