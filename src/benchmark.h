@@ -35,7 +35,7 @@ typedef NodeWeight<NodeID, WeightT> WNode;
 typedef CSRGraph<NodeID> Graph;
 typedef CSRGraph<NodeID, WNode> WGraph;
 
-typedef BuilderBase<NodeID, NodeID, NodeID> Builder;
+typedef BuilderBase<NodeID, NodeID, WeightT> Builder;
 typedef BuilderBase<NodeID, WNode, WeightT> WeightedBuilder;
 
 typedef WriterBase<NodeID, NodeID> Writer;
