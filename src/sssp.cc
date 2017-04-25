@@ -173,7 +173,7 @@ bool SSSPVerifier(const WGraph &g, NodeID source,
 
 
 int main(int argc, char* argv[]) {
-  CLDelta cli(argc, argv, "single-source shortest-path");
+  CLDelta<WeightT> cli(argc, argv, "single-source shortest-path");
   if (!cli.ParseArgs())
     return -1;
   WeightedBuilder b(cli);

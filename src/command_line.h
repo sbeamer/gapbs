@@ -10,6 +10,7 @@
 #include <cinttypes>
 #include <iostream>
 #include <string>
+#include <type_traits>
 #include <vector>
 
 
@@ -189,8 +190,9 @@ class CLPageRank : public CLApp {
 
 
 
+template<typename WeightT_>
 class CLDelta : public CLApp {
-  int delta_ = 1;
+  WeightT_ delta_ = 1;
 
  public:
   CLDelta(int argc, char** argv, std::string name) : CLApp(argc, argv, name) {
@@ -200,12 +202,17 @@ class CLDelta : public CLApp {
 
   void HandleArg(signed char opt, char* opt_arg) override {
     switch (opt) {
-      case 'd': delta_ = atoi(opt_arg);               break;
+      case 'd':
+        if (std::is_floating_point<WeightT_>::value)
+          delta_ = static_cast<WeightT_>(atof(opt_arg));
+        else
+          delta_ = static_cast<WeightT_>(atol(opt_arg));
+        break;
       default: CLApp::HandleArg(opt, opt_arg);
     }
   }
 
-  int delta() const { return delta_; }
+  WeightT_ delta() const { return delta_; }
 };
 
 
