@@ -126,13 +126,13 @@ class Generator {
     #pragma omp parallel
     {
       std::mt19937 rng;
-      std::uniform_int_distribution<WeightT_> udist(1, 255);
+      std::uniform_int_distribution<int> udist(1, 255);
       int64_t el_size = el.size();
       #pragma omp for
       for (int64_t block=0; block < el_size; block+=block_size) {
         rng.seed(kRandSeed + block/block_size);
         for (int64_t e=block; e < std::min(block+block_size, el_size); e++) {
-          el[e].v.w = udist(rng);
+          el[e].v.w = static_cast<WeightT_>(udist(rng));
         }
       }
     }

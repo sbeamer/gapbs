@@ -50,6 +50,7 @@ bins.
 using namespace std;
 
 const WeightT kDistInf = numeric_limits<WeightT>::max()/2;
+const size_t kMaxBin = numeric_limits<size_t>::max()/2;
 
 pvector<WeightT> DeltaStep(const WGraph &g, NodeID source, WeightT delta) {
   Timer t;
@@ -57,7 +58,7 @@ pvector<WeightT> DeltaStep(const WGraph &g, NodeID source, WeightT delta) {
   dist[source] = 0;
   pvector<NodeID> frontier(g.num_edges_directed());
   // two element arrays for double buffering curr=iter&1, next=(iter+1)&1
-  size_t shared_indexes[2] = {0, kDistInf};
+  size_t shared_indexes[2] = {0, kMaxBin};
   size_t frontier_tails[2] = {1, 0};
   frontier[0] = source;
   t.Start();
@@ -65,7 +66,7 @@ pvector<WeightT> DeltaStep(const WGraph &g, NodeID source, WeightT delta) {
   {
     vector<vector<NodeID> > local_bins(0);
     size_t iter = 0;
-    while (static_cast<WeightT>(shared_indexes[iter&1]) != kDistInf) {
+    while (shared_indexes[iter&1] != kMaxBin) {
       size_t &curr_bin_index = shared_indexes[iter&1];
       size_t &next_bin_index = shared_indexes[(iter+1)&1];
       size_t &curr_frontier_tail = frontier_tails[iter&1];
@@ -110,7 +111,7 @@ pvector<WeightT> DeltaStep(const WGraph &g, NodeID source, WeightT delta) {
         t.Stop();
         PrintStep(curr_bin_index, t.Millisecs(), curr_frontier_tail);
         t.Start();
-        curr_bin_index = kDistInf;
+        curr_bin_index = kMaxBin;
         curr_frontier_tail = 0;
       }
       if (next_bin_index < local_bins.size()) {
