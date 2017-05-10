@@ -82,7 +82,7 @@ bool WorthRelabelling(const Graph &g) {
   sort(samples.begin(), samples.end());
   double sample_average = static_cast<double>(sample_total) / num_samples;
   double sample_median = samples[num_samples/2];
-  return sample_average / 2 > sample_median;
+  return sample_average / 1.3 > sample_median;
 }
 
 
