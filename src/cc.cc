@@ -51,7 +51,7 @@ pvector<NodeID> ShiloachVishkin(const Graph &g) {
     for (NodeID u=0; u < g.num_nodes(); u++) {
       NodeID comp_u = comp[u];
       for (NodeID v : g.out_neigh(u)) {
-        NodeID comp_v = comp[v];      
+        NodeID comp_v = comp[v];
         if ((comp_u < comp_v) && (comp_v == comp[comp_v])) {
           change = true;
           comp[comp_v] = comp_u;
