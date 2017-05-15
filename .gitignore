@@ -7,3 +7,8 @@ sssp
 tc
 
 test/out/*.out
+
+benchmark/out/*.out
+benchmark/graphs/*.sg
+benchmark/graphs/*.wsg
+benchmark/graphs/raw/*

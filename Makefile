@@ -28,6 +28,10 @@ all: $(SUITE)
 # Testing
 include test/test.mk
 
+# Benchmark Automation
+include benchmark/bench.mk
+
+
 .PHONY: clean
 clean:
 	rm -f $(SUITE) test/out/*
