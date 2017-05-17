@@ -156,7 +156,7 @@ $(OUTPUT_DIR)/cc-%.out: $(GRAPH_DIR)/%.sg cc
 	./cc -f $< -n16 > $@
 
 $(OUTPUT_DIR)/bc-%.out: $(GRAPH_DIR)/%.sg bc
-	./bc -f $< -i16 -n4 > $@
+	./bc -f $< -i4 -n16 > $@
 
 $(OUTPUT_DIR)/tc-%.out: $(GRAPH_DIR)/%U.sg tc
 	./tc -f $< -n3 > $@
