@@ -52,7 +52,7 @@ $(RAW_GRAPH_DIR)/USA-road-d.USA.gr.gz:
 
 $(RAW_GRAPH_DIR)/USA-road-d.USA.gr: $(RAW_GRAPH_DIR)/USA-road-d.USA.gr.gz
 	cd $(RAW_GRAPH_DIR)
-	gunzip -k $<
+	gunzip < $< > $@
 
 $(GRAPH_DIR)/road.sg: $(RAW_GRAPH_DIR)/USA-road-d.USA.gr converter
 	./converter -f $< -b $@
