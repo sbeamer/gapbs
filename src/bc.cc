@@ -58,7 +58,7 @@ void PBFS(const Graph &g, NodeID source, pvector<NodeID> &path_counts,
   const NodeID* g_out_start = g.out_neigh(0).begin();
   #pragma omp parallel
   {
-    int depth = 0;
+    NodeID depth = 0;
     QueueBuffer<NodeID> lqueue(queue);
     while (!queue.empty()) {
       #pragma omp single
@@ -68,7 +68,8 @@ void PBFS(const Graph &g, NodeID source, pvector<NodeID> &path_counts,
       for (auto q_iter = queue.begin(); q_iter < queue.end(); q_iter++) {
         NodeID u = *q_iter;
         for (NodeID &v : g.out_neigh(u)) {
-          if ((depths[v] == -1) && (compare_and_swap(depths[v], -1, depth))) {
+          if ((depths[v] == -1) &&
+              (compare_and_swap(depths[v], static_cast<NodeID>(-1), depth))) {
             lqueue.push_back(v);
           }
           if (depths[v] == depth) {
