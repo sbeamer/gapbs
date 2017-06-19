@@ -40,6 +40,13 @@ class Generator {
     scale_ = scale;
     num_nodes_ = 1l << scale;
     num_edges_ = num_nodes_ * degree;
+    if (num_nodes_ > std::numeric_limits<NodeID_>::max()) {
+      std::cout << "NodeID type (max: " << std::numeric_limits<NodeID_>::max();
+      std::cout << ") too small to hold " << num_nodes_ << std::endl;
+      std::cout << "Recommend changing NodeID (typedef'd in src/benchmark.h)";
+      std::cout << " to a wider type and recompiling" << std::endl;
+      std::exit(-31);
+    }
   }
 
   void PermuteIDs(EdgeList &el) {
