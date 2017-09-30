@@ -37,7 +37,47 @@ implementation optimizations from Bader et al. [1].
 
 using namespace std;
 
+// In directed graphs, each edge must be processed, so a min-max swap is applied for avoiding cycles.
+// On the other hand, in undirected graphs (see function below) we   
+// can rely on the fact that each edge will be encountered in both directions for skipping some updates.
+pvector<NodeID> ShiloachVishkinDirected(const Graph &g) {
+  pvector<NodeID> comp(g.num_nodes());
+  #pragma omp parallel for
+  for (NodeID n=0; n < g.num_nodes(); n++)
+    comp[n] = n;
+  bool change = true;
+  int num_iter = 0;
+  while (change) {
+    change = false;
+    num_iter++;
+    #pragma omp parallel for
+    for (NodeID u=0; u < g.num_nodes(); u++) {
+      for (NodeID v : g.out_neigh(u)) {
+        NodeID comp_u = comp[u];
+        NodeID comp_v = comp[v];
+        if (comp_u == comp_v) continue;
+        // We find high and low for making sure high nodes point at low nodes and no cycles are created
+        NodeID high = comp_u > comp_v ? comp_u : comp_v; 
+        NodeID low = comp_u + comp_v - high;
+        if (high == comp[high]) {
+          change = true;
+          comp[high] = low;
+        }
+      }
+    }
+    #pragma omp parallel for
+    for (NodeID n=0; n < g.num_nodes(); n++) {
+      while (comp[n] != comp[comp[n]]) {
+        comp[n] = comp[comp[n]];
+      }
+    }
+  }
+  cout << "Shiloach-Vishkin took " << num_iter << " iterations" << endl;
+  return comp;
+}
+
 pvector<NodeID> ShiloachVishkin(const Graph &g) {
+  if (g.directed()) return ShiloachVishkinDirected(g);
   pvector<NodeID> comp(g.num_nodes());
   #pragma omp parallel for
   for (NodeID n=0; n < g.num_nodes(); n++)
@@ -52,7 +92,9 @@ pvector<NodeID> ShiloachVishkin(const Graph &g) {
       NodeID comp_u = comp[u];
       for (NodeID v : g.out_neigh(u)) {
         NodeID comp_v = comp[v];
-        if ((comp_u < comp_v) && (comp_v == comp[comp_v])) {
+        // Here, we peform a hook only if (comp_u < comp_v). Otherwise, we rely 
+        // on the same edge being encountered in the other direction as well
+        if ((comp_u < comp_v) && (comp_v == comp[comp_v])) { 
           change = true;
           comp[comp_v] = comp_u;
         }
