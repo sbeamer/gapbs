@@ -104,7 +104,7 @@ pvector<NodeID> ShiloachVishkinDirected(const Graph &g) {
         if (comp_u == comp_v) continue;
         // Hooking condition so lower component ID wins independent of direction
         NodeID high_comp = comp_u > comp_v ? comp_u : comp_v;
-        NodeID low_comp = comp_u + comp_v - high_comp;
+        NodeID low_comp = comp_u + (comp_v - high_comp);
         if (high_comp == comp[high_comp]) {
           change = true;
           comp[high_comp] = low_comp;
