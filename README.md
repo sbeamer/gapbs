@@ -71,6 +71,12 @@ Execute the benchmark suite:
 
     $ make bench-run
 
+Spack
+-----
+The GAP Benchmark Suite is also included in the [Spack](https://spack.io) package manager. To install:
+
+    $ spack install gapbs
+
 
 How to Cite
 -----------
