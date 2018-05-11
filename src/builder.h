@@ -64,8 +64,8 @@ class BuilderBase {
     #pragma omp parallel for reduction(max : max_seen)
     for (auto it = el.begin(); it < el.end(); it++) {
       Edge e = *it;
-      max_seen = std::max(max_seen, e.u);
-      max_seen = std::max(max_seen, (NodeID_) e.v);
+      max_seen = (std::max)(max_seen, e.u);
+      max_seen = (std::max)(max_seen, (NodeID_) e.v);
     }
     return max_seen;
   }
@@ -103,7 +103,7 @@ class BuilderBase {
     #pragma omp parallel for
     for (size_t block=0; block < num_blocks; block++) {
       SGOffset lsum = 0;
-      size_t block_end = std::min((block + 1) * block_size, degrees.size());
+      size_t block_end = (std::min)((block + 1) * block_size, degrees.size());
       for (size_t i=block * block_size; i < block_end; i++)
         lsum += degrees[i];
       local_sums[block] = lsum;
@@ -119,7 +119,7 @@ class BuilderBase {
     #pragma omp parallel for
     for (size_t block=0; block < num_blocks; block++) {
       SGOffset local_total = bulk_prefix[block];
-      size_t block_end = std::min((block + 1) * block_size, degrees.size());
+      size_t block_end = (std::min)((block + 1) * block_size, degrees.size());
       for (size_t i=block * block_size; i < block_end; i++) {
         prefix[i] = local_total;
         local_total += degrees[i];

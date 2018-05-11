@@ -13,6 +13,10 @@
 #include <type_traits>
 #include <vector>
 
+#if defined _WIN32
+#define snprintf _snprintf
+#endif
+
 
 /*
 GAP Benchmark Suite

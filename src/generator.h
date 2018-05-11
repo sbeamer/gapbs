@@ -40,8 +40,8 @@ class Generator {
     scale_ = scale;
     num_nodes_ = 1l << scale;
     num_edges_ = num_nodes_ * degree;
-    if (num_nodes_ > std::numeric_limits<NodeID_>::max()) {
-      std::cout << "NodeID type (max: " << std::numeric_limits<NodeID_>::max();
+    if (num_nodes_ > (std::numeric_limits<NodeID_>::max)()) {
+      std::cout << "NodeID type (max: " << (std::numeric_limits<NodeID_>::max)();
       std::cout << ") too small to hold " << num_nodes_ << std::endl;
       std::cout << "Recommend changing NodeID (typedef'd in src/benchmark.h)";
       std::cout << " to a wider type and recompiling" << std::endl;
@@ -70,7 +70,7 @@ class Generator {
       #pragma omp for
       for (int64_t block=0; block < num_edges_; block+=block_size) {
         rng.seed(kRandSeed + block/block_size);
-        for (int64_t e=block; e < std::min(block+block_size, num_edges_); e++) {
+        for (int64_t e=block; e < (std::min)(block+block_size, num_edges_); e++) {
           el[e] = Edge(udist(rng), udist(rng));
         }
       }
@@ -88,7 +88,7 @@ class Generator {
       #pragma omp for
       for (int64_t block=0; block < num_edges_; block+=block_size) {
         rng.seed(kRandSeed + block/block_size);
-        for (int64_t e=block; e < std::min(block+block_size, num_edges_); e++) {
+        for (int64_t e=block; e < (std::min)(block+block_size, num_edges_); e++) {
           NodeID_ src = 0, dst = 0;
           for (int depth=0; depth < scale_; depth++) {
             float rand_point = udist(rng);

@@ -4,17 +4,50 @@
 #ifndef TIMER_H_
 #define TIMER_H_
 
-#include <sys/time.h>
-
 
 /*
 GAP Benchmark Suite
 Class:  Timer
-Author: Scott Beamer
+Authors: Scott Beamer, Michael Sutton
 
-Simple timer that wraps gettimeofday
+Simple timer that wraps gettimeofday or uses chrono for Windows
 */
 
+#if defined _WIN32
+
+#include <chrono>
+
+class Timer {
+ public:
+  Timer() {}
+
+  void Start() {
+      t2 = t1 = std::chrono::high_resolution_clock::now();
+  }
+
+  void Stop() {
+      t2 = std::chrono::high_resolution_clock::now();
+  }
+
+  double Seconds() const {
+    return std::chrono::duration_cast<std::chrono::microseconds>(t2 - t1).count() / 1000000.0;
+  }
+
+  double Millisecs() const {
+    return std::chrono::duration_cast<std::chrono::microseconds>(t2 - t1).count() / 1000.0;
+  }
+
+  double Microsecs() const {
+    return std::chrono::duration_cast<std::chrono::microseconds>(t2 - t1).count() / 1.0;
+  }
+
+ private:
+  std::chrono::high_resolution_clock::time_point t1, t2;
+};
+
+#else
+
+#include <sys/time.h>
 
 class Timer {
  public:
@@ -46,6 +79,8 @@ class Timer {
   struct timeval start_time_;
   struct timeval elapsed_time_;
 };
+
+#endif
 
 // Times op's execution using the timer t
 #define TIME_OP(t, op) { t.Start(); (op); t.Stop(); }
