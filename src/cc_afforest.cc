@@ -62,6 +62,14 @@ which restructures and extends the Shiloach-Vishkin [2] algorithm.
 using namespace std;
 
 
+#ifdef _WIN32
+#define __FORCEINLINE__ __forceinline
+#else
+#define __FORCEINLINE__  __attribute__((always_inline)) inline
+#endif
+
+
+__FORCEINLINE__
 void Link(NodeID u, NodeID v, pvector<NodeID>& comp) {
   NodeID p1 = comp[u];
   NodeID p2 = comp[v];
@@ -106,17 +114,19 @@ NodeID SampleFrequentElement(const pvector<NodeID>& comp, int64_t num_samples = 
   auto most_frequent = std::max_element(
     sample_counts.begin(), sample_counts.end(),
     [](const kvp_type& p1, const kvp_type& p2) { return p1.second < p2.second; });
-  printf(
-      "Skipping largest intermediate component (ID: %d, approx. %1.2f%% of the graph)\n", 
-      most_frequent->first, (static_cast<float>(most_frequent->second) / num_samples)*100);
+  std::cout
+    << "Skipping largest intermediate component (ID: " << most_frequent->first
+    << ", approx. " << static_cast<int>((static_cast<float>(most_frequent->second) / num_samples) * 100)
+    << "% of the graph)" << std::endl;
   return most_frequent->first;
 }
 
 
 pvector<NodeID> Afforest(const Graph &g, int32_t neighbor_rounds = 2)
 {
-  // Initialize each node to a single-node self-pointing tree
   pvector<NodeID> comp(g.num_nodes());
+
+  // Initialize each node to a single-node self-pointing tree
   #pragma omp parallel for
   for (NodeID n = 0; n < g.num_nodes(); n++)
     comp[n] = n;
@@ -163,7 +173,8 @@ pvector<NodeID> Afforest(const Graph &g, int32_t neighbor_rounds = 2)
       }
     }
   }
-  Compress(g, comp); // Finally, 'compress' for final convergence  
+  // Finally, 'compress' for final convergence 
+  Compress(g, comp);  
   return comp;
 }
 
