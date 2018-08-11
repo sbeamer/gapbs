@@ -96,6 +96,17 @@ class CSRGraph {
     typedef DestID_* iterator;
     iterator begin() { return g_index_[n_]; }
     iterator end()   { return g_index_[n_+1]; }
+  };  
+  
+  class PartialNeighborhood {
+    NodeID_ n_;
+    NodeID_ start_nid_; // The neighbor index to start from
+    DestID_** g_index_;
+   public:
+    PartialNeighborhood(NodeID_ n, NodeID_ start_nid, DestID_** g_index) : n_(n), start_nid_(start_nid), g_index_(g_index) {}
+    typedef DestID_* iterator;
+    iterator begin() { return g_index_[n_+1] - g_index_[n_] > start_nid_ ? g_index_[n_] + start_nid_ : g_index_[n_+1]; }
+    iterator end()   { return g_index_[n_+1]; }
   };
 
   void ReleaseResources() {
@@ -197,9 +208,35 @@ class CSRGraph {
     return Neighborhood(n, out_index_);
   }
 
+  PartialNeighborhood out_neigh(NodeID_ n, NodeID_ start_nid) const {
+    return PartialNeighborhood(n, start_nid, out_index_);
+  }
+
+  bool out_neigh(NodeID_ n, NodeID_ nid, NodeID_& v) const {
+    if (out_index_[n+1] - out_index_[n] > nid) {
+      v = *(out_index_[n] + nid);
+      return true;
+    }
+    return false;
+  }
+
   Neighborhood in_neigh(NodeID_ n) const {
     static_assert(MakeInverse, "Graph inversion disabled but reading inverse");
     return Neighborhood(n, in_index_);
+  }
+
+  PartialNeighborhood in_neigh(NodeID_ n, NodeID_ start_nid) const {
+    static_assert(MakeInverse, "Graph inversion disabled but reading inverse");
+    return PartialNeighborhood(n, start_nid, in_index_);
+  }    
+  
+  bool in_neigh(NodeID_ n, NodeID_ nid, NodeID_& v) const {
+    static_assert(MakeInverse, "Graph inversion disabled but reading inverse");
+    if (in_index_[n+1] - in_index_[n] > nid) {
+      v = *(in_index_[n] + nid);
+      return true;
+    }
+    return false;
   }
 
   void PrintStats() const {
