@@ -45,8 +45,9 @@ void Link(NodeID u, NodeID v, pvector<NodeID>& comp) {
     NodeID high = p1 > p2 ? p1 : p2;
     NodeID low = p1 + (p2 - high);
     NodeID p_high = comp[high];
-    if ((p_high == low) ||                                              // Was already 'low'
-        (p_high == high && compare_and_swap(comp[high], high, low)))    // Succeeded on writing 'low'
+    // Was already 'low' or succeeded in writing 'low'
+    if ((p_high == low) ||
+        (p_high == high && compare_and_swap(comp[high], high, low)))
       break;
     p1 = comp[comp[high]];
     p2 = comp[low];
@@ -99,7 +100,7 @@ pvector<NodeID> Afforest(const Graph &g, int32_t neighbor_rounds = 2) {
     comp[n] = n;
 
   // Process a sparse sampled subgraph first for approximating components.
-  // The sampling is done by processing a fixed number of neighbors for each node (see paper)
+  // Sample by processing a fixed number of neighbors for each node (see paper)
   for (int r = 0; r < neighbor_rounds; ++r) {
     #pragma omp parallel for
     for (NodeID u = 0; u < g.num_nodes(); u++) {
@@ -111,30 +112,32 @@ pvector<NodeID> Afforest(const Graph &g, int32_t neighbor_rounds = 2) {
     Compress(g, comp);
   }
 
-  // Sample 'comp' to find the most frequent element -- due to prior compression, this 
-  // value represents the largest intermediate component
+  // Sample 'comp' to find the most frequent element -- due to prior
+  // compression, this value represents the largest intermediate component
   NodeID c = SampleFrequentElement(comp);
 
-  // Perform a final 'link' phase over remaining edges (excluding largest component)
-  if (g.directed() == false) {
+  // Final 'link' phase over remaining edges (excluding largest component)
+  if (!g.directed()) {
     #pragma omp parallel for schedule(dynamic, 2048)
     for (NodeID u = 0; u < g.num_nodes(); u++) {
-      if (comp[u] == c) continue;  // Skip processing nodes from the largest component
-      for (NodeID v : g.out_neigh(u, neighbor_rounds)) {  // Start from the correct neighbor
+      // Skip processing nodes in the largest component
+      if (comp[u] == c)
+        continue;
+      // Skip over part of neighborhood (determined by neighbor_rounds)
+      for (NodeID v : g.out_neigh(u, neighbor_rounds)) {
         Link(u, v, comp);
       }
     }
   } else {
-    // The algorithm supports finding the Weakly Connected Components (WCC) for directed
-    // graphs as well. However, in order to support skipping of large component, incoming  
-    // edges of other components must be processed as well
     #pragma omp parallel for schedule(dynamic, 2048)
     for (NodeID u = 0; u < g.num_nodes(); u++) {
-      if (comp[u] == c) continue;
+      if (comp[u] == c)
+        continue;
       for (NodeID v : g.out_neigh(u, neighbor_rounds)) {
         Link(u, v, comp);
       }
-      for (NodeID v : g.in_neigh(u)) { // Process parts of the reverse graph as well
+      // To support directed graphs, process reverse graph completely
+      for (NodeID v : g.in_neigh(u)) {
         Link(u, v, comp);
       }
     }
