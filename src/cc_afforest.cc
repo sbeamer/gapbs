@@ -46,7 +46,7 @@ void Link(NodeID u, NodeID v, pvector<NodeID>& comp) {
     NodeID low = p1 + (p2 - high);
     NodeID p_high = comp[high];
     if ((p_high == low) ||                                              // Was already 'low'
-        (p_high == high && compare_and_swap(comp[high], high, low)))    // Succeeded on writing 'low'  
+        (p_high == high && compare_and_swap(comp[high], high, low)))    // Succeeded on writing 'low'
       break;
     p1 = comp[comp[high]];
     p2 = comp[low];
@@ -73,12 +73,12 @@ NodeID SampleFrequentElement(const pvector<NodeID>& comp, int64_t num_samples = 
   for (NodeID i = 0; i < num_samples; i++) {
     NodeID n = distribution(gen);
     auto it = sample_counts.find(comp[n]);
-    if (it == sample_counts.end())  
+    if (it == sample_counts.end())
       sample_counts[comp[n]] = 1;
     else
       ++it->second;
   }
-  // Find an estimation for the most frequent element 
+  // Find an estimation for the most frequent element
   auto most_frequent = std::max_element(
     sample_counts.begin(), sample_counts.end(),
     [](const kvp_type& p1, const kvp_type& p2) { return p1.second < p2.second; });
@@ -90,8 +90,7 @@ NodeID SampleFrequentElement(const pvector<NodeID>& comp, int64_t num_samples = 
 }
 
 
-pvector<NodeID> Afforest(const Graph &g, int32_t neighbor_rounds = 2)
-{
+pvector<NodeID> Afforest(const Graph &g, int32_t neighbor_rounds = 2) {
   pvector<NodeID> comp(g.num_nodes());
 
   // Initialize each node to a single-node self-pointing tree
@@ -116,24 +115,23 @@ pvector<NodeID> Afforest(const Graph &g, int32_t neighbor_rounds = 2)
   // value represents the largest intermediate component
   NodeID c = SampleFrequentElement(comp);
 
-  // Perform a final 'link' phase over remaining edges (excluding largest component) 
+  // Perform a final 'link' phase over remaining edges (excluding largest component)
   if (g.directed() == false) {
     #pragma omp parallel for schedule(dynamic, 2048)
     for (NodeID u = 0; u < g.num_nodes(); u++) {
-      if (comp[u] == c) continue; // Skip processing nodes from the largest component
-      for (NodeID v : g.out_neigh(u, neighbor_rounds)) { // Start from the correct neighbor
+      if (comp[u] == c) continue;  // Skip processing nodes from the largest component
+      for (NodeID v : g.out_neigh(u, neighbor_rounds)) {  // Start from the correct neighbor
         Link(u, v, comp);
       }
     }
-  }
-  else {
+  } else {
     // The algorithm supports finding the Weakly Connected Components (WCC) for directed
     // graphs as well. However, in order to support skipping of large component, incoming  
     // edges of other components must be processed as well
     #pragma omp parallel for schedule(dynamic, 2048)
     for (NodeID u = 0; u < g.num_nodes(); u++) {
-      if (comp[u] == c) continue; 
-      for (NodeID v : g.out_neigh(u, neighbor_rounds)) { 
+      if (comp[u] == c) continue;
+      for (NodeID v : g.out_neigh(u, neighbor_rounds)) {
         Link(u, v, comp);
       }
       for (NodeID v : g.in_neigh(u)) { // Process parts of the reverse graph as well
@@ -141,8 +139,8 @@ pvector<NodeID> Afforest(const Graph &g, int32_t neighbor_rounds = 2)
       }
     }
   }
-  // Finally, 'compress' for final convergence 
-  Compress(g, comp);  
+  // Finally, 'compress' for final convergence
+  Compress(g, comp);
   return comp;
 }
 
