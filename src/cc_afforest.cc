@@ -65,7 +65,8 @@ void Compress(const Graph &g, pvector<NodeID>& comp) {
 }
 
 
-NodeID SampleFrequentElement(const pvector<NodeID>& comp, int64_t num_samples = 1024) {
+NodeID SampleFrequentElement(const pvector<NodeID>& comp,
+                             int64_t num_samples = 1024) {
   std::unordered_map<NodeID, int> sample_counts(32);
   using kvp_type = std::unordered_map<NodeID, int>::value_type;
   // Sample elements from 'comp'
@@ -73,19 +74,16 @@ NodeID SampleFrequentElement(const pvector<NodeID>& comp, int64_t num_samples = 
   std::uniform_int_distribution<NodeID> distribution(0, comp.size() - 1);
   for (NodeID i = 0; i < num_samples; i++) {
     NodeID n = distribution(gen);
-    auto it = sample_counts.find(comp[n]);
-    if (it == sample_counts.end())
-      sample_counts[comp[n]] = 1;
-    else
-      ++it->second;
+    sample_counts[comp[n]]++;
   }
-  // Find an estimation for the most frequent element
+  // Find most frequent element in samples (estimate of most frequent overall)
   auto most_frequent = std::max_element(
     sample_counts.begin(), sample_counts.end(),
-    [](const kvp_type& p1, const kvp_type& p2) { return p1.second < p2.second; });
+    [](const kvp_type& a, const kvp_type& b) { return a.second < b.second; });
+  float frac_of_graph = static_cast<float>(most_frequent->second) / num_samples;
   std::cout
     << "Skipping largest intermediate component (ID: " << most_frequent->first
-    << ", approx. " << static_cast<int>((static_cast<float>(most_frequent->second) / num_samples) * 100)
+    << ", approx. " << static_cast<int>(frac_of_graph) * 100
     << "% of the graph)" << std::endl;
   return most_frequent->first;
 }
