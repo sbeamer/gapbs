@@ -96,11 +96,11 @@ class CSRGraph {
     typedef DestID_* iterator;
     iterator begin() { return g_index_[n_]; }
     iterator end()   { return g_index_[n_+1]; }
-  };  
-  
+  };
+
   class PartialNeighborhood {
     NodeID_ n_;
-    NodeID_ start_nid_; // The neighbor index to start from
+    NodeID_ start_nid_;  // The neighbor index to start from
     DestID_** g_index_;
    public:
     PartialNeighborhood(NodeID_ n, NodeID_ start_nid, DestID_** g_index) : n_(n), start_nid_(start_nid), g_index_(g_index) {}
@@ -228,8 +228,8 @@ class CSRGraph {
   PartialNeighborhood in_neigh(NodeID_ n, NodeID_ start_nid) const {
     static_assert(MakeInverse, "Graph inversion disabled but reading inverse");
     return PartialNeighborhood(n, start_nid, in_index_);
-  }    
-  
+  }
+
   bool in_neigh(NodeID_ n, NodeID_ nid, NodeID_& v) const {
     static_assert(MakeInverse, "Graph inversion disabled but reading inverse");
     if (in_index_[n+1] - in_index_[n] > nid) {
