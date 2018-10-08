@@ -4,7 +4,9 @@
 #ifndef GRAPH_H_
 #define GRAPH_H_
 
+#include <algorithm>
 #include <cinttypes>
+#include <cstddef>
 #include <iostream>
 #include <type_traits>
 
@@ -87,25 +89,22 @@ typedef int64_t SGOffset;
 
 template <class NodeID_, class DestID_ = NodeID_, bool MakeInverse = true>
 class CSRGraph {
+  // Used for *non-negative* offsets within a neighborhood
+  typedef std::make_unsigned<std::ptrdiff_t>::type OffsetT;
+
   // Used to access neighbors of vertex, basically sugar for iterators
   class Neighborhood {
     NodeID_ n_;
     DestID_** g_index_;
+    OffsetT start_offset_;
    public:
-    Neighborhood(NodeID_ n, DestID_** g_index) : n_(n), g_index_(g_index) {}
+    Neighborhood(NodeID_ n, DestID_** g_index, OffsetT start_offset) :
+        n_(n), g_index_(g_index), start_offset_(0) {
+      OffsetT max_offset = end() - begin();
+      start_offset_ = std::min(start_offset, max_offset);
+    }
     typedef DestID_* iterator;
-    iterator begin() { return g_index_[n_]; }
-    iterator end()   { return g_index_[n_+1]; }
-  };
-
-  class PartialNeighborhood {
-    NodeID_ n_;
-    NodeID_ start_nid_;  // The neighbor index to start from
-    DestID_** g_index_;
-   public:
-    PartialNeighborhood(NodeID_ n, NodeID_ start_nid, DestID_** g_index) : n_(n), start_nid_(start_nid), g_index_(g_index) {}
-    typedef DestID_* iterator;
-    iterator begin() { return g_index_[n_+1] - g_index_[n_] > start_nid_ ? g_index_[n_] + start_nid_ : g_index_[n_+1]; }
+    iterator begin() { return g_index_[n_] + start_offset_; }
     iterator end()   { return g_index_[n_+1]; }
   };
 
@@ -204,12 +203,8 @@ class CSRGraph {
     return in_index_[v+1] - in_index_[v];
   }
 
-  Neighborhood out_neigh(NodeID_ n) const {
-    return Neighborhood(n, out_index_);
-  }
-
-  PartialNeighborhood out_neigh(NodeID_ n, NodeID_ start_nid) const {
-    return PartialNeighborhood(n, start_nid, out_index_);
+  Neighborhood out_neigh(NodeID_ n, OffsetT start_offset = 0) const {
+    return Neighborhood(n, out_index_, start_offset);
   }
 
   bool out_neigh(NodeID_ n, NodeID_ nid, NodeID_& v) const {
@@ -220,14 +215,9 @@ class CSRGraph {
     return false;
   }
 
-  Neighborhood in_neigh(NodeID_ n) const {
+  Neighborhood in_neigh(NodeID_ n, OffsetT start_offset = 0) const {
     static_assert(MakeInverse, "Graph inversion disabled but reading inverse");
-    return Neighborhood(n, in_index_);
-  }
-
-  PartialNeighborhood in_neigh(NodeID_ n, NodeID_ start_nid) const {
-    static_assert(MakeInverse, "Graph inversion disabled but reading inverse");
-    return PartialNeighborhood(n, start_nid, in_index_);
+    return Neighborhood(n, in_index_, start_offset);
   }
 
   bool in_neigh(NodeID_ n, NodeID_ nid, NodeID_& v) const {
