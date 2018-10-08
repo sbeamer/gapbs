@@ -102,9 +102,10 @@ pvector<NodeID> Afforest(const Graph &g, int32_t neighbor_rounds = 2) {
   for (int r = 0; r < neighbor_rounds; ++r) {
     #pragma omp parallel for
     for (NodeID u = 0; u < g.num_nodes(); u++) {
-      NodeID v;
-      if (g.out_neigh(u, r, v)) {
+      for (NodeID v : g.out_neigh(u, r)) {
+        // Link at most one time if neighbor available at offset r
         Link(u, v, comp);
+        break;
       }
     }
     Compress(g, comp);

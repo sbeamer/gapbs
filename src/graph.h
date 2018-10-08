@@ -207,26 +207,9 @@ class CSRGraph {
     return Neighborhood(n, out_index_, start_offset);
   }
 
-  bool out_neigh(NodeID_ n, NodeID_ nid, NodeID_& v) const {
-    if (out_index_[n+1] - out_index_[n] > nid) {
-      v = *(out_index_[n] + nid);
-      return true;
-    }
-    return false;
-  }
-
   Neighborhood in_neigh(NodeID_ n, OffsetT start_offset = 0) const {
     static_assert(MakeInverse, "Graph inversion disabled but reading inverse");
     return Neighborhood(n, in_index_, start_offset);
-  }
-
-  bool in_neigh(NodeID_ n, NodeID_ nid, NodeID_& v) const {
-    static_assert(MakeInverse, "Graph inversion disabled but reading inverse");
-    if (in_index_[n+1] - in_index_[n] > nid) {
-      v = *(in_index_[n] + nid);
-      return true;
-    }
-    return false;
   }
 
   void PrintStats() const {
