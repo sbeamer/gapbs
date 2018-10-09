@@ -1,4 +1,4 @@
-// Copyright (c) 2015, The Regents of the University of California (Regents)
+// Copyright (c) 2018, The Hebrew University of Jerusalem (HUJI, A. Barak)
 // See LICENSE.txt for license details
 
 #include <algorithm>
@@ -19,67 +19,132 @@
 /*
 GAP Benchmark Suite
 Kernel: Connected Components (CC)
-Author: Scott Beamer
+Authors: Michael Sutton, Scott Beamer
 
 Will return comp array labelling each vertex with a connected component ID
 
-This CC implementation makes use of the Shiloach-Vishkin [2] algorithm with
-implementation optimizations from Bader et al. [1]. Michael Sutton contributed
-a fix for directed graphs using the min-max swap from [3], and it also produces
-more consistent performance for undirected graphs.
+This CC implementation makes use of the Afforest subgraph sampling algorithm [1],
+which restructures and extends the Shiloach-Vishkin algorithm [2].
 
-[1] David A Bader, Guojing Cong, and John Feo. "On the architectural
-    requirements for efficient execution of graph algorithms." International
-    Conference on Parallel Processing, Jul 2005.
+[1] Michael Sutton, Tal Ben-Nun, and Amnon Barak. "Optimizing Parallel 
+    Graph Connectivity Computation via Subgraph Sampling" Symposium on 
+    Parallel and Distributed Processing, IPDPS 2018.
 
 [2] Yossi Shiloach and Uzi Vishkin. "An o(logn) parallel connectivity algorithm"
     Journal of Algorithms, 3(1):57–67, 1982.
-
-[3] Kishore Kothapalli, Jyothish Soman, and P. J. Narayanan. "Fast GPU
-    algorithms for graph connectivity." Workshop on Large Scale Parallel
-    Processing, 2010.
 */
 
 
 using namespace std;
 
 
-// The hooking condition (comp_u < comp_v) may not coincide with the edge's
-// direction, so we use a min-max swap such that lower component IDs propagate
-// independent of the edge's direction.
-pvector<NodeID> ShiloachVishkin(const Graph &g) {
+// Place nodes u and v in same component of lower component ID
+void Link(NodeID u, NodeID v, pvector<NodeID>& comp) {
+  NodeID p1 = comp[u];
+  NodeID p2 = comp[v];
+  while (p1 != p2) {
+    NodeID high = p1 > p2 ? p1 : p2;
+    NodeID low = p1 + (p2 - high);
+    NodeID p_high = comp[high];
+    // Was already 'low' or succeeded in writing 'low'
+    if ((p_high == low) ||
+        (p_high == high && compare_and_swap(comp[high], high, low)))
+      break;
+    p1 = comp[comp[high]];
+    p2 = comp[low];
+  }
+}
+
+
+// Reduce depth of tree for each component to 1 by crawling up parents
+void Compress(const Graph &g, pvector<NodeID>& comp) {
+  #pragma omp parallel for schedule(static, 2048)
+  for (NodeID n = 0; n < g.num_nodes(); n++) {
+    while (comp[n] != comp[comp[n]]) {
+      comp[n] = comp[comp[n]];
+    }
+  }
+}
+
+
+NodeID SampleFrequentElement(const pvector<NodeID>& comp,
+                             int64_t num_samples = 1024) {
+  std::unordered_map<NodeID, int> sample_counts(32);
+  using kvp_type = std::unordered_map<NodeID, int>::value_type;
+  // Sample elements from 'comp'
+  std::mt19937 gen;
+  std::uniform_int_distribution<NodeID> distribution(0, comp.size() - 1);
+  for (NodeID i = 0; i < num_samples; i++) {
+    NodeID n = distribution(gen);
+    sample_counts[comp[n]]++;
+  }
+  // Find most frequent element in samples (estimate of most frequent overall)
+  auto most_frequent = std::max_element(
+    sample_counts.begin(), sample_counts.end(),
+    [](const kvp_type& a, const kvp_type& b) { return a.second < b.second; });
+  float frac_of_graph = static_cast<float>(most_frequent->second) / num_samples;
+  std::cout
+    << "Skipping largest intermediate component (ID: " << most_frequent->first
+    << ", approx. " << static_cast<int>(frac_of_graph) * 100
+    << "% of the graph)" << std::endl;
+  return most_frequent->first;
+}
+
+
+pvector<NodeID> Afforest(const Graph &g, int32_t neighbor_rounds = 2) {
   pvector<NodeID> comp(g.num_nodes());
+
+  // Initialize each node to a single-node self-pointing tree
   #pragma omp parallel for
-  for (NodeID n=0; n < g.num_nodes(); n++)
+  for (NodeID n = 0; n < g.num_nodes(); n++)
     comp[n] = n;
-  bool change = true;
-  int num_iter = 0;
-  while (change) {
-    change = false;
-    num_iter++;
+
+  // Process a sparse sampled subgraph first for approximating components.
+  // Sample by processing a fixed number of neighbors for each node (see paper)
+  for (int r = 0; r < neighbor_rounds; ++r) {
     #pragma omp parallel for
-    for (NodeID u=0; u < g.num_nodes(); u++) {
-      for (NodeID v : g.out_neigh(u)) {
-        NodeID comp_u = comp[u];
-        NodeID comp_v = comp[v];
-        if (comp_u == comp_v) continue;
-        // Hooking condition so lower component ID wins independent of direction
-        NodeID high_comp = comp_u > comp_v ? comp_u : comp_v;
-        NodeID low_comp = comp_u + (comp_v - high_comp);
-        if (high_comp == comp[high_comp]) {
-          change = true;
-          comp[high_comp] = low_comp;
-        }
+    for (NodeID u = 0; u < g.num_nodes(); u++) {
+      for (NodeID v : g.out_neigh(u, r)) {
+        // Link at most one time if neighbor available at offset r
+        Link(u, v, comp);
+        break;
       }
     }
-    #pragma omp parallel for
-    for (NodeID n=0; n < g.num_nodes(); n++) {
-      while (comp[n] != comp[comp[n]]) {
-        comp[n] = comp[comp[n]];
+    Compress(g, comp);
+  }
+
+  // Sample 'comp' to find the most frequent element -- due to prior
+  // compression, this value represents the largest intermediate component
+  NodeID c = SampleFrequentElement(comp);
+
+  // Final 'link' phase over remaining edges (excluding largest component)
+  if (!g.directed()) {
+    #pragma omp parallel for schedule(dynamic, 2048)
+    for (NodeID u = 0; u < g.num_nodes(); u++) {
+      // Skip processing nodes in the largest component
+      if (comp[u] == c)
+        continue;
+      // Skip over part of neighborhood (determined by neighbor_rounds)
+      for (NodeID v : g.out_neigh(u, neighbor_rounds)) {
+        Link(u, v, comp);
+      }
+    }
+  } else {
+    #pragma omp parallel for schedule(dynamic, 2048)
+    for (NodeID u = 0; u < g.num_nodes(); u++) {
+      if (comp[u] == c)
+        continue;
+      for (NodeID v : g.out_neigh(u, neighbor_rounds)) {
+        Link(u, v, comp);
+      }
+      // To support directed graphs, process reverse graph completely
+      for (NodeID v : g.in_neigh(u)) {
+        Link(u, v, comp);
       }
     }
   }
-  cout << "Shiloach-Vishkin took " << num_iter << " iterations" << endl;
+  // Finally, 'compress' for final convergence
+  Compress(g, comp);
   return comp;
 }
 
@@ -151,11 +216,12 @@ bool CCVerifier(const Graph &g, const pvector<NodeID> &comp) {
 
 
 int main(int argc, char* argv[]) {
-  CLApp cli(argc, argv, "connected-components");
+  CLApp cli(argc, argv, "connected-components-afforest");
   if (!cli.ParseArgs())
     return -1;
   Builder b(cli);
   Graph g = b.MakeGraph();
-  BenchmarkKernel(cli, g, ShiloachVishkin, PrintCompStats, CCVerifier);
+  auto CCBound = [](const Graph& gr){ return Afforest(gr); };
+  BenchmarkKernel(cli, g, CCBound, PrintCompStats, CCVerifier);
   return 0;
 }
