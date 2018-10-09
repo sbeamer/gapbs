@@ -7,12 +7,12 @@ The GAP Benchmark Suite is intended to help graph processing research by standar
 
 Kernels Included
 ----------------
-+ Breadth-First Search (BFS)
-+ Single-Source Shortest Paths (SSSP)
-+ PageRank (PR)
-+ Connected Components (CC)
-+ Betweenness Centrality (BC)
-+ Triangle Counting (TC)
++ *BFS* - Breadth-First Search - direction optimizing
++ *SSSP* - Single-Source Shortest Paths - delta stepping
++ *PR* - PageRank - iterative method in pull direction
++ *CC* - Connected Components - Afforest & Shiloach-Vishkin
++ *BC* - Betweenness Centrality - Brandes
++ *TC* - Triangle Counting - Order invariant with possible relabelling
 
 
 Quick Start
@@ -24,7 +24,7 @@ Build the project:
 
 Override the default C++ compiler:
 
-    $ CXX=g++-7 make
+    $ CXX=g++-8 make
 
 Test the build:
 
