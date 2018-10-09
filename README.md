@@ -7,12 +7,12 @@ The GAP Benchmark Suite is intended to help graph processing research by standar
 
 Kernels Included
 ----------------
-+ *BFS* - Breadth-First Search - direction optimizing
-+ *SSSP* - Single-Source Shortest Paths - delta stepping
-+ *PR* - PageRank - iterative method in pull direction
-+ *CC* - Connected Components - Afforest & Shiloach-Vishkin
-+ *BC* - Betweenness Centrality - Brandes
-+ *TC* - Triangle Counting - Order invariant with possible relabelling
++ Breadth-First Search (BFS) - direction optimizing
++ Single-Source Shortest Paths (SSSP) - delta stepping
++ PageRank (PR) - iterative method in pull direction
++ Connected Components (CC) - Afforest & Shiloach-Vishkin
++ Betweenness Centrality (BC) - Brandes
++ Triangle Counting (TC) - Order invariant with possible relabelling
 
 
 Quick Start
