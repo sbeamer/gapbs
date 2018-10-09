@@ -221,6 +221,7 @@ int main(int argc, char* argv[]) {
     return -1;
   Builder b(cli);
   Graph g = b.MakeGraph();
-  BenchmarkKernel(cli, g, [&](const Graph& gr){ return Afforest(gr); }, PrintCompStats, CCVerifier);
+  auto CCBound = [](const Graph& gr){ return Afforest(gr); };
+  BenchmarkKernel(cli, g, CCBound, PrintCompStats, CCVerifier);
   return 0;
 }
