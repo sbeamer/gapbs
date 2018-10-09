@@ -38,6 +38,7 @@ which restructures and extends the Shiloach-Vishkin algorithm [2].
 using namespace std;
 
 
+// Place nodes u and v in same component of lower component ID
 void Link(NodeID u, NodeID v, pvector<NodeID>& comp) {
   NodeID p1 = comp[u];
   NodeID p2 = comp[v];
@@ -55,6 +56,7 @@ void Link(NodeID u, NodeID v, pvector<NodeID>& comp) {
 }
 
 
+// Reduce depth of tree for each component to 1 by crawling up parents
 void Compress(const Graph &g, pvector<NodeID>& comp) {
   #pragma omp parallel for schedule(static, 2048)
   for (NodeID n = 0; n < g.num_nodes(); n++) {
