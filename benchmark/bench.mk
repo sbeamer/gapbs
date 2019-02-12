@@ -63,7 +63,7 @@ $(GRAPH_DIR)/road.wsg: $(RAW_GRAPH_DIR)/USA-road-d.USA.gr converter
 $(GRAPH_DIR)/roadU.sg: $(RAW_GRAPH_DIR)/USA-road-d.USA.gr converter
 	./converter -sf $< -b $@
 
-WEB_URL = https://www.cise.ufl.edu/research/sparse/MM/LAW/sk-2005.tar.gz
+WEB_URL = https://sparse.tamu.edu/MM/LAW/sk-2005.tar.gz
 $(RAW_GRAPH_DIR)/sk-2005.tar.gz:
 	wget -P $(RAW_GRAPH_DIR) $(WEB_URL)
 
