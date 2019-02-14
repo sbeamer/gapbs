@@ -66,6 +66,7 @@ class Reader {
     return el;
   }
 
+  // Note: converts vertex numbering from 1..N to 0..N-1
   EdgeList ReadInGR(std::ifstream &in) {
     EdgeList el;
     char c;
@@ -75,7 +76,7 @@ class Reader {
       c = in.peek();
       if (c == 'a') {
         in >> c >> u >> v;
-        el.push_back(Edge(u, v));
+        el.push_back(Edge(u - 1, v - 1));
       } else {
         in.ignore(200, '\n');
       }
