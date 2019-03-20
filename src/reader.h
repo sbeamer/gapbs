@@ -76,7 +76,7 @@ class Reader {
       c = in.peek();
       if (c == 'a') {
         in >> c >> u >> v;
-        el.push_back(Edge(u - 1, v - 1));
+        el.push_back(Edge(u - 1, NodeWeight<NodeID_, WeightT_>(v.v-1, v.w)));
       } else {
         in.ignore(200, '\n');
       }
