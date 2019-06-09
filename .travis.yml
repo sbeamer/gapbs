@@ -21,4 +21,4 @@ matrix:
       env: CXX=clang++-3.7 SERIAL=1
 script:
   - make -j
-  - make test
+  - make -j test
