@@ -204,7 +204,7 @@ class Reader {
         v.v -= 1;
         el.push_back(Edge(u - 1, v));
         if (undirected)
-          el.push_back(Edge(v, u - 1));
+          el.push_back(Edge(v.v, NodeWeight<NodeID_, WeightT_>(u - 1, v.w)));
       } else {
         NodeID_ v;
         edge_stream >> v;
