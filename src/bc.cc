@@ -214,7 +214,7 @@ bool BCVerifier(const Graph &g, SourcePicker<Graph> &sp, NodeID num_iters,
   // Compare scores
   bool all_ok = true;
   for (NodeID n : g.vertices()) {
-    ScoreT delta = scores_to_test[n] - scores[n];
+    ScoreT delta = abs(scores_to_test[n] - scores[n]);
     if (delta > std::numeric_limits<ScoreT>::epsilon()) {
       cout << n << ": " << scores[n] << " != " << scores_to_test[n];
       cout << "(" << delta << ")" << endl;
