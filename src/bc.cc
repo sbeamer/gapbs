@@ -63,10 +63,8 @@ void PBFS(const Graph &g, NodeID source, pvector<CountT> &path_counts,
     NodeID depth = 0;
     QueueBuffer<NodeID> lqueue(queue);
     while (!queue.empty()) {
-      #pragma omp single
-      depth_index.push_back(queue.begin());
       depth++;
-      #pragma omp for schedule(dynamic, 64)
+      #pragma omp for schedule(dynamic, 64) nowait
       for (auto q_iter = queue.begin(); q_iter < queue.end(); q_iter++) {
         NodeID u = *q_iter;
         for (NodeID &v : g.out_neigh(u)) {
@@ -84,7 +82,10 @@ void PBFS(const Graph &g, NodeID source, pvector<CountT> &path_counts,
       lqueue.flush();
       #pragma omp barrier
       #pragma omp single
-      queue.slide_window();
+      {
+        depth_index.push_back(queue.begin());
+        queue.slide_window();
+      }
     }
   }
   depth_index.push_back(queue.begin());
