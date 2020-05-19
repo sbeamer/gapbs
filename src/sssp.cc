@@ -52,6 +52,35 @@ using namespace std;
 const WeightT kDistInf = numeric_limits<WeightT>::max()/2;
 const size_t kMaxBin = numeric_limits<size_t>::max()/2;
 
+void RelaxNodeEdges(const WGraph &g, NodeID u, WeightT delta,
+                    int curr_bin_index,
+                    pvector<WeightT> &dist,
+                    vector<vector<NodeID>> &local_bins) {
+    if (dist[u] >= delta * static_cast<WeightT>(curr_bin_index)) {
+        for (WNode wn : g.out_neigh(u)) {
+            WeightT old_dist = dist[wn.v];
+            WeightT new_dist = dist[u] + wn.w;
+            if (new_dist < old_dist) {
+                bool changed_dist = true;
+                while (!compare_and_swap(dist[wn.v], old_dist, new_dist)) {
+                    old_dist = dist[wn.v];
+                    if (old_dist <= new_dist) {
+                        changed_dist = false;
+                        break;
+                    }
+                }
+                if (changed_dist) {
+                    size_t dest_bin = new_dist/delta;
+                    if (dest_bin >= local_bins.size()) {
+                        local_bins.resize(dest_bin+1);
+                    }
+                    local_bins[dest_bin].push_back(wn.v);
+                }
+            }
+        }
+    }
+}
+
 pvector<WeightT> DeltaStep(const WGraph &g, NodeID source, WeightT delta) {
   Timer t;
   pvector<WeightT> dist(g.num_nodes(), kDistInf);
@@ -74,29 +103,7 @@ pvector<WeightT> DeltaStep(const WGraph &g, NodeID source, WeightT delta) {
       #pragma omp for nowait schedule(dynamic, 64)
       for (size_t i=0; i < curr_frontier_tail; i++) {
         NodeID u = frontier[i];
-        if (dist[u] >= delta * static_cast<WeightT>(curr_bin_index)) {
-          for (WNode wn : g.out_neigh(u)) {
-            WeightT old_dist = dist[wn.v];
-            WeightT new_dist = dist[u] + wn.w;
-            if (new_dist < old_dist) {
-              bool changed_dist = true;
-              while (!compare_and_swap(dist[wn.v], old_dist, new_dist)) {
-                old_dist = dist[wn.v];
-                if (old_dist <= new_dist) {
-                  changed_dist = false;
-                  break;
-                }
-              }
-              if (changed_dist) {
-                size_t dest_bin = new_dist/delta;
-                if (dest_bin >= local_bins.size()) {
-                  local_bins.resize(dest_bin+1);
-                }
-                local_bins[dest_bin].push_back(wn.v);
-              }
-            }
-          }
-        }
+        RelaxNodeEdges(g, u, delta, curr_bin_index, dist, local_bins);
       }
       for (size_t i=curr_bin_index; i < local_bins.size(); i++) {
         if (!local_bins[i].empty()) {
