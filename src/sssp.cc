@@ -51,11 +51,12 @@ using namespace std;
 
 const WeightT kDistInf = numeric_limits<WeightT>::max()/2;
 const size_t kMaxBin = numeric_limits<size_t>::max()/2;
+const size_t bin_size_threshold = 1000;
 
-void RelaxNodeEdges(const WGraph &g, NodeID u, WeightT delta,
-                    int curr_bin_index,
-                    pvector<WeightT> &dist,
-                    vector<vector<NodeID>> &local_bins) {
+void RelaxEdges(const WGraph &g, NodeID u, WeightT delta,
+                int curr_bin_index,
+                pvector<WeightT> &dist,
+                vector <vector<NodeID>> &local_bins) {
     if (dist[u] >= delta * static_cast<WeightT>(curr_bin_index)) {
         for (WNode wn : g.out_neigh(u)) {
             WeightT old_dist = dist[wn.v];
@@ -103,7 +104,18 @@ pvector<WeightT> DeltaStep(const WGraph &g, NodeID source, WeightT delta) {
       #pragma omp for nowait schedule(dynamic, 64)
       for (size_t i=0; i < curr_frontier_tail; i++) {
         NodeID u = frontier[i];
-        RelaxNodeEdges(g, u, delta, curr_bin_index, dist, local_bins);
+        RelaxEdges(g, u, delta, curr_bin_index, dist, local_bins);
+      }
+      while (local_bins.size() > 0 && curr_bin_index < local_bins.size()
+            && !local_bins[curr_bin_index].empty()) {
+            size_t cur_bin_size = local_bins[curr_bin_index].size();
+            vector<NodeID> cur_bin_copy = local_bins[curr_bin_index];
+            local_bins[curr_bin_index].resize(0);
+            if (cur_bin_size > bin_size_threshold) break;
+            for (size_t i =0; i < cur_bin_size; i++) {
+                NodeID u = cur_bin_copy[i];
+                RelaxEdges(g, u, delta, curr_bin_index, dist, local_bins);
+            }
       }
       for (size_t i=curr_bin_index; i < local_bins.size(); i++) {
         if (!local_bins[i].empty()) {
