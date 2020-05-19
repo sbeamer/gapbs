@@ -19,13 +19,15 @@
 /*
 GAP Benchmark Suite
 Kernel: Single-source Shortest Paths (SSSP)
-Author: Scott Beamer
+Author: Scott Beamer, Yunming Zhang
 
 Returns array of distances for all vertices from given source vertex
 
 This SSSP implementation makes use of the ∆-stepping algorithm [1]. The type
 used for weights and distances (WeightT) is typedefined in benchmark.h. The
-delta parameter (-d) should be set for each input graph.
+delta parameter (-d) should be set for each input graph. This implementation
+ incorporates a new bucket fusion optimization [2] that significantly reduces
+ the number of iterations needed.
 
 The bins of width delta are actually all thread-local and of type std::vector
 so they can grow but are otherwise capacity-proportional. Each iteration is
@@ -33,7 +35,7 @@ done in two phases separated by barriers. In the first phase, the current
 shared bin is processed by all threads. As they find vertices whose distance
 they are able to improve, they add them to their thread-local bins. During this
 phase, each thread also votes on what the next bin should be (smallest
-non-empty bin). In the next phase, each thread copies their selected
+non-empty bin). In the next phase, each thread copies its selected
 thread-local bin into the shared bin.
 
 Once a vertex is added to a bin, it is not removed, even if its distance is
@@ -42,8 +44,19 @@ their current distance is less than the min distance for the bin to remove
 enough redundant work that this is faster than removing the vertex from older
 bins.
 
+The bucket fusion optimization [2] executes the next thread-local bin in
+ the same iteration if the vertices in the next thread-local bin have the
+ same priority as those in the current shared bin. This optimization greatly
+ reduces the number of iterations needed without violating the priority-based
+ execution order, leading to significant speedup on large diameter road networks.
+
 [1] Ulrich Meyer and Peter Sanders. "δ-stepping: a parallelizable shortest path
     algorithm." Journal of Algorithms, 49(1):114–152, 2003.
+
+[2] Yunming Zhang, Ajay Brahmakshatriya, Xinyi Chen, Laxman Dhulipala,
+    Shoaib Kamil, Saman Amarasinghe, and Julian Shun. "Optimizing ordered graph
+    algorithms with GraphIt." The 18th International Symposium on Code Generation
+    and Optimization (CGO), pages 158-170, 2020.
 */
 
 
