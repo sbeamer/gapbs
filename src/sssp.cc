@@ -71,22 +71,15 @@ void RelaxEdges(const WGraph &g, NodeID u, WeightT delta,
   for (WNode wn : g.out_neigh(u)) {
     WeightT old_dist = dist[wn.v];
     WeightT new_dist = dist[u] + wn.w;
-    if (new_dist < old_dist) {
-      bool changed_dist = true;
-      while (!compare_and_swap(dist[wn.v], old_dist, new_dist)) {
-        old_dist = dist[wn.v];
-        if (old_dist <= new_dist) {
-          changed_dist = false;
-          break;
-        }
-      }
-      if (changed_dist) {
+    while (new_dist < old_dist) {
+      if (compare_and_swap(dist[wn.v], old_dist, new_dist)) {
         size_t dest_bin = new_dist/delta;
-        if (dest_bin >= local_bins.size()) {
+        if (dest_bin >= local_bins.size())
           local_bins.resize(dest_bin+1);
-        }
         local_bins[dest_bin].push_back(wn.v);
+        break;
       }
+      old_dist = dist[wn.v];      // swap failed, recheck dist update & retry
     }
   }
 }
