@@ -43,13 +43,19 @@ class BuilderBase {
   const CLBase &cli_;
   bool symmetrize_;
   bool needs_weights_;
-  bool inPlace_ = false;
+  bool in_place_ = false;
   int64_t num_nodes_ = -1;
 
  public:
   explicit BuilderBase(const CLBase &cli) : cli_(cli) {
     symmetrize_ = cli_.symmetrize();
     needs_weights_ = !std::is_same<NodeID_, DestID_>::value;
+    in_place_ = cli_.in_place();
+    if (in_place_ && needs_weights_) {
+      std::cout << "In-place building (-m) does not support weighted graphs"
+                << std::endl;
+      exit(-30);
+    }
   }
 
   DestID_ GetSource(EdgePair<NodeID_, NodeID_> e) {
@@ -76,13 +82,10 @@ class BuilderBase {
     #pragma omp parallel for
     for (auto it = el.begin(); it < el.end(); it++) {
       Edge e = *it;
-      if (symmetrize_ || (!symmetrize_ && !transpose)) {
+      if (symmetrize_ || (!symmetrize_ && !transpose))
         fetch_and_add(degrees[e.u], 1);
-      }
-      if (!(inPlace_ && symmetrize_) && (symmetrize_ ||
-         (!symmetrize_ && transpose))) {
+      if ((symmetrize_ && !in_place_) || (!symmetrize_ && transpose))
         fetch_and_add(degrees[(NodeID_) e.v], 1);
-      }
     }
     return degrees;
   }
@@ -184,129 +187,104 @@ class BuilderBase {
 
   /*
   In-Place Graph Building Steps
-    - sort and remove self loops and redundant edges
-    - overwrite given edgelist with outgoing neighbors
+    - sort edges and squish (remove self loops and redundant edges)
+    - overwrite EdgeList's memory with outgoing neighbors
     - if graph not being symmetrized
-      - continue overwriting edgelist with incoming neighbors
+      - finalize structures and make incoming structures if requested
     - if being symmetrized
-      - search for needed inverses and continue to write to edgelist
+      - search for needed inverses, make room for them, add them in place
   */
-  void MakeCSRInPlace(EdgeList &el, bool transpose, DestID_*** index,
-                      DestID_** neighs, DestID_*** inv_index,
-                      DestID_** inv_neighs) {
-
-    // initial sort
+  void MakeCSRInPlace(EdgeList &el, DestID_*** index, DestID_** neighs,
+                      DestID_*** inv_index, DestID_** inv_neighs) {
+    // preprocess EdgeList - sort & squish in place
     std::sort(el.begin(), el.end());
-
-    if (!std::is_same<NodeID_, DestID_>::value) {
-      std::cerr << "In-place building does not support weighted input graphs\n";
-      exit(-32);
-    }
-
-    // SQUISH IN PLACE
     auto new_end = std::unique(el.begin(), el.end());
-    if (new_end != el.end())
-      el.resize(new_end - el.begin());
-    new_end = std::remove_if(el.begin(), el.end(),
-                             [](Edge e){ return e.u == e.v; });
-    if (new_end != el.end())
-      el.resize(new_end - el.begin());
-
-
-    // VARIABLE & OBJECT DECLARATIONS
+    el.resize(new_end - el.begin());
+    auto self_loop = [](Edge e){ return e.u == e.v; };
+    new_end = std::remove_if(el.begin(), el.end(), self_loop);
+    el.resize(new_end - el.begin());
+    // analyze EdgeList and repurpose it for outgoing edges
     pvector<NodeID_> degrees = CountDegrees(el, false);
     pvector<SGOffset> offsets = ParallelPrefixSum(degrees);
     pvector<NodeID_> indegrees = CountDegrees(el, true);
     *neighs = reinterpret_cast<DestID_*>(el.data());
-    int elLength = el.size();
-    *inv_neighs = reinterpret_cast<DestID_*>(el.data());
-
-    // OUT GOING NEIGHBORS
-    for (Edge e : el) {
-      if (symmetrize_ || (!symmetrize_ && !transpose)) {
-        (*neighs)[offsets[e.u]++] = e.v;
-      }
-    }
-
-    // shift offsets right to revert them
-    for (SGOffset i = offsets.size()-1; i >= 0; i--) {
-      offsets[i] = i != 0 ? offsets[i-1] : 0;
-    }
-
-    // IF: INCOMING
-    // ELSE: INVERSE
+    for (Edge e : el)
+      (*neighs)[offsets[e.u]++] = e.v;
+    size_t num_edges = el.size();
     el.leak();
-    if (!symmetrize_) {
-      // write in-neighs to new malloc'd memory
-      std::cout << "Not Symmetrized\n";
-      *neighs = static_cast<DestID_*>(std::realloc
-                           (*neighs, (elLength * sizeof(DestID_))));
+    // revert offsets by shifting them down
+    for (NodeID_ n = num_nodes_; n >= 0; n--)
+      offsets[n] = n != 0 ? offsets[n-1] : 0;
+    if (!symmetrize_) {   // not going to symmetrize so no need to add edges
+      size_t new_size = num_edges * sizeof(DestID_);
+      *neighs = static_cast<DestID_*>(std::realloc(*neighs, new_size));
       *index = CSRGraph<NodeID_, DestID_>::GenIndex(offsets, *neighs);
-      pvector<SGOffset> inoffsets = ParallelPrefixSum(indegrees);
-      *inv_neighs = new DestID_[inoffsets[num_nodes_]];
-      *inv_index = CSRGraph<NodeID_, DestID_>::GenIndex(inoffsets, *inv_neighs);
-      for (size_t i = 0; i < (degrees.size()); i++) {
-        for (NodeID_ j = 0; j < (degrees[i]); j++) {
-          NodeID_ u = static_cast<NodeID_>((*index)[i][j]);
-          (*inv_neighs)[fetch_and_add(inoffsets[u], 1)] = i;
-        }
-      }
-    } else {
-      // PASS ONE count number of needed inverses
-      pvector<int> numNeededInvs(num_nodes_, 0);
-      for (size_t v = 0; v < (offsets.size() - 1); v++) {
-        int numOutNeighs = offsets[v+1] - offsets[v]; // dont need new var
-        for (int i = 0; i < numOutNeighs; i++) {
-          DestID_ n = (*neighs + offsets[v])[i];
-          if (!(std::binary_search((*neighs) + offsets[n],
-                                   (*neighs) + offsets[n+1], (DestID_)v))) {
-            numNeededInvs[n] = numNeededInvs[n] + 1;
+      if (invert) {       // create inv_neighs & inv_index for incoming edges
+        pvector<SGOffset> inoffsets = ParallelPrefixSum(indegrees);
+        *inv_neighs = new DestID_[inoffsets[num_nodes_]];
+        *inv_index = CSRGraph<NodeID_, DestID_>::GenIndex(inoffsets,
+                                                          *inv_neighs);
+        for (NodeID_ u = 0; u < num_nodes_; u++) {
+          for (DestID_* it = (*index)[u]; it < (*index)[u+1]; it++) {
+            NodeID_ v = static_cast<NodeID_>(*it);
+            (*inv_neighs)[inoffsets[v]] = u;
+            inoffsets[v]++;
           }
         }
       }
-      //  increment degrees, make new degrees, realloc neighs
-      int totalMissingInv = 0;
-      for (size_t i = 0; i < numNeededInvs.size(); i++) {
-        degrees[i] = degrees[i] + numNeededInvs[i];
-        totalMissingInv += numNeededInvs[i];
+    } else {              // symmetrize graph by adding missing inverse edges
+      // Step 1 - count number of needed inverses
+      pvector<NodeID_> invs_needed(num_nodes_, 0);
+      for (NodeID_ u = 0; u < num_nodes_; u++) {
+        for (SGOffset i = offsets[u]; i < offsets[u+1]; i++) {
+          DestID_ v = (*neighs)[i];
+          bool inv_found = std::binary_search(*neighs + offsets[v],
+                                              *neighs + offsets[v+1],
+                                              static_cast<DestID_>(u));
+          if (!inv_found)
+            invs_needed[v]++;
+        }
       }
-      offsets = ParallelPrefixSum(degrees);
+      // increase offsets to account for missing inverses, realloc neighs
+      SGOffset total_missing_inv = 0;
+      for (NodeID_ n = 0; n <= num_nodes_; n++) {
+        offsets[n] += total_missing_inv;
+        total_missing_inv += invs_needed[n];
+      }
       size_t newsize = (offsets[num_nodes_] * sizeof(DestID_));
       *neighs = static_cast<DestID_*>(std::realloc(*neighs, newsize));
       if (*neighs == nullptr) {
-        std::cout << "Call to realloc() failed.\n";
+        std::cout << "Call to realloc() failed" << std::endl;
         exit(-33);
       }
-
-      // PASS TWO write existing neighs
-      NodeID_ tailIndex = offsets[num_nodes_] - 1;
-      for (int v = num_nodes_; v > 0; v--) {
-        NodeID_ N;
-        for (N = offsets[v]; N > (offsets[v-1] + numNeededInvs[v-1]); N--) {
-          (*neighs)[tailIndex] = (*neighs)[N-totalMissingInv-1];
-          tailIndex--;
+      // Step 2 - spread out existing neighs to make room for inverses
+      //   copies backwards (overwrites) and inserts free space at starts
+      SGOffset tail_index = offsets[num_nodes_] - 1;
+      for (NodeID_ n = num_nodes_ - 1; n >= 0; n--) {
+        SGOffset new_start = offsets[n] + invs_needed[n];
+        for (SGOffset i = offsets[n+1]-1; i >= new_start; i--) {
+          (*neighs)[tail_index] = (*neighs)[i - total_missing_inv];
+          tail_index--;
         }
-        totalMissingInv = totalMissingInv - numNeededInvs[v-1];
-        tailIndex = tailIndex - numNeededInvs[v-1];
+        total_missing_inv -= invs_needed[n];
+        tail_index -= invs_needed[n];
       }
-
-      // PASS THREE bin search for and write missing inv
-      tailIndex = offsets[num_nodes_] - 1;
-      for (int v = 0; v < num_nodes_; v++) {
-        tailIndex = tailIndex - numNeededInvs[v-1];
-        int numOutNeighs = offsets[v+1] - offsets[v] - numNeededInvs[v];
-        for (int i = 0; i < numOutNeighs; i++) {
-          DestID_ n = (*neighs + offsets[v] + numNeededInvs[v])[i];
-          if (!(std::binary_search(((*neighs) + offsets[n] + numNeededInvs[n]),
-                                    ((*neighs) + offsets[n+1]), (DestID_)v))) {
-            (*neighs)[offsets[n] + numNeededInvs[n] - 1] = (DestID_)v;
-            numNeededInvs[n] -= 1;
+      // Step 3 - add missing inverse edges into free spaces from Step 2
+      for (NodeID_ u = 0; u < num_nodes_; u++) {
+        for (SGOffset i = offsets[u] + invs_needed[u]; i < offsets[u+1]; i++) {
+          DestID_ v = (*neighs)[i];
+          bool inv_found = std::binary_search(
+                             *neighs + offsets[v] + invs_needed[v],
+                             *neighs + offsets[v+1],
+                             static_cast<DestID_>(u));
+          if (!inv_found) {
+            (*neighs)[offsets[v] + invs_needed[v] -1] = static_cast<DestID_>(u);
+            invs_needed[v]--;
           }
         }
       }
-      for (int v = 0; v < num_nodes_; v++) {
-        std::sort(&((*neighs)[offsets[v]]), &((*neighs)[offsets[v+1]]));
-      }
+      for (NodeID_ n = 0; n < num_nodes_; n++)
+        std::sort(*neighs + offsets[n], *neighs + offsets[n+1]);
       *index = CSRGraph<NodeID_, DestID_>::GenIndex(offsets, *neighs);
     }
   }
@@ -344,8 +322,8 @@ class BuilderBase {
       num_nodes_ = FindMaxNodeID(el)+1;
     if (needs_weights_)
       Generator<NodeID_, DestID_, WeightT_>::InsertWeights(el);
-    if (inPlace_) {
-      MakeCSRInPlace(el, false, &index, &neighs, &inv_index, &inv_neighs);
+    if (in_place_) {
+      MakeCSRInPlace(el, &index, &neighs, &inv_index, &inv_neighs);
     } else {
       MakeCSR(el, false, &index, &neighs);
       if (!symmetrize_ && invert) {
@@ -361,16 +339,10 @@ class BuilderBase {
                                                 inv_index, inv_neighs);
   }
 
-  CSRGraph<NodeID_, DestID_, invert> MakeGraph(bool mFlag = false) {
+  CSRGraph<NodeID_, DestID_, invert> MakeGraph() {
     CSRGraph<NodeID_, DestID_, invert> g;
     {  // extra scope to trigger earlier deletion of el (save memory)
-      inPlace_ = mFlag;
       EdgeList el;
-      if (inPlace_ && needs_weights_) {
-        std::cerr << "In-place building does not support \
-                      adding weights to graphs\n";
-        exit(-30);
-      }
       if (cli_.filename() != "") {
         Reader<NodeID_, DestID_, WeightT_, invert> r(cli_.filename());
         if ((r.GetSuffix() == ".sg") || (r.GetSuffix() == ".wsg")) {
@@ -384,11 +356,10 @@ class BuilderBase {
       }
       g = MakeGraphFromEL(el);
     }
-    if (inPlace_) {
+    if (in_place_)
       return g;
-    } else {
+    else
       return SquishGraph(g);
-    }
   }
 
   // Relabels (and rebuilds) graph by order of decreasing degree

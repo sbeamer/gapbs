@@ -30,7 +30,6 @@ class pvector {
     start_ = new T_[num_elements];
     end_size_ = start_ + num_elements;
     end_capacity_ = end_size_;
-    buildInPlace = false;
   }
 
   pvector(size_t num_elements, T_ init_val) : pvector(num_elements) {
@@ -59,7 +58,7 @@ class pvector {
   // want move assignment
   pvector& operator= (pvector &&other) {
     if (this != &other) {
-      freeStart();
+      ReleaseResources();
       start_ = other.start_;
       end_size_ = other.end_size_;
       end_capacity_ = other.end_capacity_;
@@ -70,14 +69,14 @@ class pvector {
     return *this;
   }
 
-  void freeStart(){
+  void ReleaseResources(){
     if (start_ != nullptr) {
       delete[] start_;
     }
   }
 
   ~pvector() {
-    freeStart();
+    ReleaseResources();
   }
 
   // not thread-safe
@@ -94,6 +93,8 @@ class pvector {
     }
   }
 
+  // prevents internal storage from being freed when this pvector is desctructed
+  // - used by Builder to reuse an EdgeList's space for in-place graph building
   void leak() {
     start_ = nullptr;
   }
@@ -165,7 +166,6 @@ class pvector {
   T_* start_;
   T_* end_size_;
   T_* end_capacity_;
-  bool buildInPlace;
   static const size_t growth_factor = 2;
 };
 

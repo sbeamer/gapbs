@@ -17,13 +17,13 @@ int main(int argc, char* argv[]) {
   cli.ParseArgs();
   if (cli.out_weighted()) {
     WeightedBuilder bw(cli);
-    WGraph wg = bw.MakeGraph(cli.lowmem());
+    WGraph wg = bw.MakeGraph();
     wg.PrintStats();
     WeightedWriter ww(wg);
     ww.WriteGraph(cli.out_filename(), cli.out_sg());
   } else {
     Builder b(cli);
-    Graph g = b.MakeGraph(cli.lowmem());
+    Graph g = b.MakeGraph();
     g.PrintStats();
     Writer w(g);
     w.WriteGraph(cli.out_filename(), cli.out_sg());
