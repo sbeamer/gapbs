@@ -195,6 +195,8 @@ class Reader {
       std::exit(-26);
     }
     while (std::getline(in, line)) {
+      if (line.empty())
+        continue;
       std::istringstream edge_stream(line);
       NodeID_ u;
       edge_stream >> u;
