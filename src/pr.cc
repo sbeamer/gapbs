@@ -4,7 +4,6 @@
 #include <algorithm>
 #include <iostream>
 #include <vector>
-#include <iomanip>
 
 #include "benchmark.h"
 #include "builder.h"
