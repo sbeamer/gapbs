@@ -19,10 +19,11 @@ Author: Scott Beamer
 
 Will return pagerank scores for all vertices once total change < epsilon
 
-This PR implementation uses the traditional iterative approach. This is done
-to ease comparisons to other implementations (often use same algorithm), but
-it is not necesarily the fastest way to implement it. It does perform the
-updates in the pull direction to remove the need for atomics.
+This legacy PR implementation uses the traditional iterative approach. This is
+done to ease comparisons to other implementations (often use same algorithm),
+but it is not necesarily the fastest way to implement it. It performs each
+iteration as a sparse-matrix vector multiply (SpMV), and values are not visible
+until the next iteration (like Jacobi-style method).
 */
 
 
@@ -42,7 +43,7 @@ pvector<ScoreT> PageRankPull(const Graph &g, int max_iters,
     #pragma omp parallel for
     for (NodeID n=0; n < g.num_nodes(); n++)
       outgoing_contrib[n] = scores[n] / g.out_degree(n);
-    #pragma omp parallel for reduction(+ : error) schedule(dynamic, 64)
+    #pragma omp parallel for reduction(+ : error) schedule(dynamic, 16384)
     for (NodeID u=0; u < g.num_nodes(); u++) {
       ScoreT incoming_total = 0;
       for (NodeID v : g.in_neigh(u))

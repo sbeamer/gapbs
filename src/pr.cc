@@ -18,10 +18,10 @@ Author: Scott Beamer
 
 Will return pagerank scores for all vertices once total change < epsilon
 
-This PR implementation uses the traditional iterative approach. This is done
-to ease comparisons to other implementations (often use same algorithm), but
-it is not necesarily the fastest way to implement it. It does perform the
-updates in the pull direction to remove the need for atomics.
+This PR implementation uses the traditional iterative approach. It perform
+updates in the pull direction to remove the need for atomics, and it allows
+new values to be immediately visible (like Gauss-Seidel method). The prior PR
+implemention is still available in src/pr_spmv.cc.
 */
 
 
