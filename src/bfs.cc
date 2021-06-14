@@ -70,7 +70,7 @@ int64_t TDStep(const Graph &g, pvector<NodeID> &parent,
   #pragma omp parallel
   {
     QueueBuffer<NodeID> lqueue(queue);
-    #pragma omp for reduction(+ : scout_count)
+    #pragma omp for reduction(+ : scout_count) nowait
     for (auto q_iter = queue.begin(); q_iter < queue.end(); q_iter++) {
       NodeID u = *q_iter;
       for (NodeID v : g.out_neigh(u)) {
@@ -102,7 +102,7 @@ void BitmapToQueue(const Graph &g, const Bitmap &bm,
   #pragma omp parallel
   {
     QueueBuffer<NodeID> lqueue(queue);
-    #pragma omp for
+    #pragma omp for nowait
     for (NodeID n=0; n < g.num_nodes(); n++)
       if (bm.get_bit(n))
         lqueue.push_back(n);
