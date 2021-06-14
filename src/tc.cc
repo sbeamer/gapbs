@@ -1,6 +1,9 @@
 // Copyright (c) 2015, The Regents of the University of California (Regents)
 // See LICENSE.txt for license details
 
+// Encourage use of gcc's parallel algorithms (for sort for relabeling)
+#define _GLIBCXX_PARALLEL
+
 #include <algorithm>
 #include <cinttypes>
 #include <iostream>
