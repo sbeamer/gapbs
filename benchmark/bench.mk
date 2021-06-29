@@ -25,12 +25,12 @@ bench-graphs: $(RAW_GRAPH_DIR) $(ALL_GRAPHS_WITH_PATHS)
 
 # Real-world
 
-TWITTER_URL = http://an.kaist.ac.kr/~haewoon/release/twitter_social_graph/twitter_rv.tar.gz
-$(RAW_GRAPH_DIR)/twitter_rv.tar.gz:
+TWITTER_URL = https://github.com/ANLAB-KAIST/traces/releases/download/twitter_rv.net/twitter_rv.net.$*.gz
+$(RAW_GRAPH_DIR)/twitter_rv.net.%.gz:
 	wget -P $(RAW_GRAPH_DIR) $(TWITTER_URL)
 
-$(RAW_GRAPH_DIR)/twitter_rv.net: $(RAW_GRAPH_DIR)/twitter_rv.tar.gz
-	tar -zxvf $< -C $(RAW_GRAPH_DIR)
+$(RAW_GRAPH_DIR)/twitter_rv.net: $(RAW_GRAPH_DIR)/twitter_rv.net.00.gz $(RAW_GRAPH_DIR)/twitter_rv.net.01.gz $(RAW_GRAPH_DIR)/twitter_rv.net.02.gz $(RAW_GRAPH_DIR)/twitter_rv.net.03.gz
+	gunzip -c $^ > $@
 	touch $@
 
 $(RAW_GRAPH_DIR)/twitter.el: $(RAW_GRAPH_DIR)/twitter_rv.net
