@@ -50,6 +50,16 @@ class Reader {
   EdgeList ReadInEL(std::ifstream &in) {
     EdgeList el;
     NodeID_ u, v;
+
+    char c;
+    do {
+      c = in.peek();
+      if (c == '#') {
+        in.ignore(200, '\n');
+        std::cout << c << " ignoring comment" << std::endl;
+      }
+    } while (c == '#');
+
     while (in >> u >> v) {
       el.push_back(Edge(u, v));
     }
@@ -60,6 +70,16 @@ class Reader {
     EdgeList el;
     NodeID_ u;
     NodeWeight<NodeID_, WeightT_> v;
+
+    char c;
+    do {
+      c = in.peek();
+      if (c == '#') {
+        in.ignore(200, '\n');
+        std::cout << c << " ignoring comment" << std::endl;
+      }
+    } while (c == '#');
+
     while (in >> u >> v) {
       el.push_back(Edge(u, v));
     }
