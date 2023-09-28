@@ -52,7 +52,7 @@ pvector<ScoreT> PageRankPullGS(const Graph &g, int max_iters,
       error += fabs(scores[u] - old_score);
       outgoing_contrib[u] = scores[u] / g.out_degree(u);
     }
-    printf(" %2d    %lf\n", iter, error);
+    PrintStep(iter, error);
     if (error < epsilon)
       break;
   }

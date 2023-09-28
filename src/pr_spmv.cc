@@ -52,7 +52,7 @@ pvector<ScoreT> PageRankPull(const Graph &g, int max_iters,
       scores[u] = base_score + kDamp * incoming_total;
       error += fabs(scores[u] - old_score);
     }
-    printf(" %2d    %lf\n", iter, error);
+    PrintStep(iter, error);
     if (error < epsilon)
       break;
   }
