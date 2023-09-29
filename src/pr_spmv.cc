@@ -32,8 +32,8 @@ using namespace std;
 typedef float ScoreT;
 const float kDamp = 0.85;
 
-pvector<ScoreT> PageRankPull(const Graph &g, int max_iters,
-                             double epsilon = 0) {
+pvector<ScoreT> PageRankPull(const Graph &g, int max_iters, double epsilon = 0,
+                             bool logging_enabled = false) {
   const ScoreT init_score = 1.0f / g.num_nodes();
   const ScoreT base_score = (1.0f - kDamp) / g.num_nodes();
   pvector<ScoreT> scores(g.num_nodes(), init_score);
@@ -52,7 +52,8 @@ pvector<ScoreT> PageRankPull(const Graph &g, int max_iters,
       scores[u] = base_score + kDamp * incoming_total;
       error += fabs(scores[u] - old_score);
     }
-    PrintStep(iter, error);
+    if (logging_enabled)
+      PrintStep(iter, error);
     if (error < epsilon)
       break;
   }
@@ -101,7 +102,7 @@ int main(int argc, char* argv[]) {
   Builder b(cli);
   Graph g = b.MakeGraph();
   auto PRBound = [&cli] (const Graph &g) {
-    return PageRankPull(g, cli.max_iters(), cli.tolerance());
+    return PageRankPull(g, cli.max_iters(), cli.tolerance(), cli.logging_en());
   };
   auto VerifierBound = [&cli] (const Graph &g, const pvector<ScoreT> &scores) {
     return PRVerifier(g, scores, cli.tolerance());

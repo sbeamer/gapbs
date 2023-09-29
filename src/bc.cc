@@ -93,7 +93,7 @@ void PBFS(const Graph &g, NodeID source, pvector<CountT> &path_counts,
 
 
 pvector<ScoreT> Brandes(const Graph &g, SourcePicker<Graph> &sp,
-                        NodeID num_iters) {
+                        NodeID num_iters, bool logging_enabled = false) {
   Timer t;
   t.Start();
   pvector<ScoreT> scores(g.num_nodes(), 0);
@@ -102,11 +102,13 @@ pvector<ScoreT> Brandes(const Graph &g, SourcePicker<Graph> &sp,
   vector<SlidingQueue<NodeID>::iterator> depth_index;
   SlidingQueue<NodeID> queue(g.num_nodes());
   t.Stop();
-  PrintStep("a", t.Seconds());
+  if (logging_enabled)
+    PrintStep("a", t.Seconds());
   const NodeID* g_out_start = g.out_neigh(0).begin();
   for (NodeID iter=0; iter < num_iters; iter++) {
     NodeID source = sp.PickNext();
-    cout << "source: " << source << endl;
+    if (logging_enabled)
+      PrintStep("Source", static_cast<int64_t>(source));
     t.Start();
     path_counts.fill(0);
     depth_index.resize(0);
@@ -114,7 +116,8 @@ pvector<ScoreT> Brandes(const Graph &g, SourcePicker<Graph> &sp,
     succ.reset();
     PBFS(g, source, path_counts, succ, depth_index, queue);
     t.Stop();
-    PrintStep("b", t.Seconds());
+    if (logging_enabled)
+      PrintStep("b", t.Seconds());
     pvector<ScoreT> deltas(g.num_nodes(), 0);
     t.Start();
     for (int d=depth_index.size()-2; d >= 0; d--) {
@@ -132,7 +135,8 @@ pvector<ScoreT> Brandes(const Graph &g, SourcePicker<Graph> &sp,
       }
     }
     t.Stop();
-    PrintStep("p", t.Seconds());
+    if (logging_enabled)
+      PrintStep("p", t.Seconds());
   }
   // normalize scores
   ScoreT biggest_score = 0;
@@ -235,8 +239,9 @@ int main(int argc, char* argv[]) {
   Builder b(cli);
   Graph g = b.MakeGraph();
   SourcePicker<Graph> sp(g, cli.start_vertex());
-  auto BCBound =
-    [&sp, &cli] (const Graph &g) { return Brandes(g, sp, cli.num_iters()); };
+  auto BCBound = [&sp, &cli] (const Graph &g) {
+    return Brandes(g, sp, cli.num_iters(), cli.logging_en());
+  };
   SourcePicker<Graph> vsp(g, cli.start_vertex());
   auto VerifierBound = [&vsp, &cli] (const Graph &g,
                                      const pvector<ScoreT> &scores) {

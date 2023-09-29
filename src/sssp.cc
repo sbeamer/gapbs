@@ -84,7 +84,8 @@ void RelaxEdges(const WGraph &g, NodeID u, WeightT delta,
   }
 }
 
-pvector<WeightT> DeltaStep(const WGraph &g, NodeID source, WeightT delta) {
+pvector<WeightT> DeltaStep(const WGraph &g, NodeID source, WeightT delta,
+                           bool logging_enabled = false) {
   Timer t;
   pvector<WeightT> dist(g.num_nodes(), kDistInf);
   dist[source] = 0;
@@ -128,7 +129,8 @@ pvector<WeightT> DeltaStep(const WGraph &g, NodeID source, WeightT delta) {
       #pragma omp single nowait
       {
         t.Stop();
-        PrintStep(curr_bin_index, t.Millisecs(), curr_frontier_tail);
+        if (logging_enabled)
+          PrintStep(curr_bin_index, t.Millisecs(), curr_frontier_tail);
         t.Start();
         curr_bin_index = kMaxBin;
         curr_frontier_tail = 0;
@@ -144,7 +146,8 @@ pvector<WeightT> DeltaStep(const WGraph &g, NodeID source, WeightT delta) {
       #pragma omp barrier
     }
     #pragma omp single
-    cout << "took " << iter << " iterations" << endl;
+    if (logging_enabled)
+      cout << "took " << iter << " iterations" << endl;
   }
   return dist;
 }
@@ -199,7 +202,7 @@ int main(int argc, char* argv[]) {
   WGraph g = b.MakeGraph();
   SourcePicker<WGraph> sp(g, cli.start_vertex());
   auto SSSPBound = [&sp, &cli] (const WGraph &g) {
-    return DeltaStep(g, sp.PickNext(), cli.delta());
+    return DeltaStep(g, sp.PickNext(), cli.delta(), cli.logging_en());
   };
   SourcePicker<WGraph> vsp(g, cli.start_vertex());
   auto VerifierBound = [&vsp] (const WGraph &g, const pvector<WeightT> &dist) {

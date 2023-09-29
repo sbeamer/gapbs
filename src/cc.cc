@@ -68,6 +68,7 @@ void Compress(const Graph &g, pvector<NodeID>& comp) {
 
 
 NodeID SampleFrequentElement(const pvector<NodeID>& comp,
+                             bool logging_enabled = false,
                              int64_t num_samples = 1024) {
   std::unordered_map<NodeID, int> sample_counts(32);
   using kvp_type = std::unordered_map<NodeID, int>::value_type;
@@ -83,15 +84,17 @@ NodeID SampleFrequentElement(const pvector<NodeID>& comp,
     sample_counts.begin(), sample_counts.end(),
     [](const kvp_type& a, const kvp_type& b) { return a.second < b.second; });
   float frac_of_graph = static_cast<float>(most_frequent->second) / num_samples;
-  std::cout
-    << "Skipping largest intermediate component (ID: " << most_frequent->first
-    << ", approx. " << static_cast<int>(frac_of_graph * 100)
-    << "% of the graph)" << std::endl;
+  if (logging_enabled)
+    std::cout
+      << "Skipping largest intermediate component (ID: " << most_frequent->first
+      << ", approx. " << static_cast<int>(frac_of_graph * 100)
+      << "% of the graph)" << std::endl;
   return most_frequent->first;
 }
 
 
-pvector<NodeID> Afforest(const Graph &g, int32_t neighbor_rounds = 2) {
+pvector<NodeID> Afforest(const Graph &g, bool logging_enabled = false,
+                         int32_t neighbor_rounds = 2) {
   pvector<NodeID> comp(g.num_nodes());
 
   // Initialize each node to a single-node self-pointing tree
@@ -115,7 +118,7 @@ pvector<NodeID> Afforest(const Graph &g, int32_t neighbor_rounds = 2) {
 
   // Sample 'comp' to find the most frequent element -- due to prior
   // compression, this value represents the largest intermediate component
-  NodeID c = SampleFrequentElement(comp);
+  NodeID c = SampleFrequentElement(comp, logging_enabled);
 
   // Final 'link' phase over remaining edges (excluding largest component)
   if (!g.directed()) {
@@ -221,7 +224,7 @@ int main(int argc, char* argv[]) {
     return -1;
   Builder b(cli);
   Graph g = b.MakeGraph();
-  auto CCBound = [](const Graph& gr){ return Afforest(gr); };
+  auto CCBound = [&cli](const Graph& gr){ return Afforest(gr, cli.logging_en()); };
   BenchmarkKernel(cli, g, CCBound, PrintCompStats, CCVerifier);
   return 0;
 }
