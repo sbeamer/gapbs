@@ -119,14 +119,16 @@ pvector<NodeID> InitParent(const Graph &g) {
   return parent;
 }
 
-pvector<NodeID> DOBFS(const Graph &g, NodeID source, int alpha = 15,
-                      int beta = 18) {
-  PrintStep("Source", static_cast<int64_t>(source));
+pvector<NodeID> DOBFS(const Graph &g, NodeID source, bool logging_enabled = false,
+                      int alpha = 15, int beta = 18) {
+  if (logging_enabled)
+    PrintStep("Source", static_cast<int64_t>(source));
   Timer t;
   t.Start();
   pvector<NodeID> parent = InitParent(g);
   t.Stop();
-  PrintStep("i", t.Seconds());
+  if (logging_enabled)
+    PrintStep("i", t.Seconds());
   parent[source] = source;
   SlidingQueue<NodeID> queue(g.num_nodes());
   queue.push_back(source);
@@ -141,7 +143,8 @@ pvector<NodeID> DOBFS(const Graph &g, NodeID source, int alpha = 15,
     if (scout_count > edges_to_check / alpha) {
       int64_t awake_count, old_awake_count;
       TIME_OP(t, QueueToBitmap(queue, front));
-      PrintStep("e", t.Seconds());
+      if (logging_enabled)
+        PrintStep("e", t.Seconds());
       awake_count = queue.size();
       queue.slide_window();
       do {
@@ -150,11 +153,13 @@ pvector<NodeID> DOBFS(const Graph &g, NodeID source, int alpha = 15,
         awake_count = BUStep(g, parent, front, curr);
         front.swap(curr);
         t.Stop();
-        PrintStep("bu", t.Seconds(), awake_count);
+        if (logging_enabled)
+          PrintStep("bu", t.Seconds(), awake_count);
       } while ((awake_count >= old_awake_count) ||
                (awake_count > g.num_nodes() / beta));
       TIME_OP(t, BitmapToQueue(g, front, queue));
-      PrintStep("c", t.Seconds());
+      if (logging_enabled)
+        PrintStep("c", t.Seconds());
       scout_count = 1;
     } else {
       t.Start();
@@ -162,7 +167,8 @@ pvector<NodeID> DOBFS(const Graph &g, NodeID source, int alpha = 15,
       scout_count = TDStep(g, parent, queue);
       queue.slide_window();
       t.Stop();
-      PrintStep("td", t.Seconds(), queue.size());
+      if (logging_enabled)
+        PrintStep("td", t.Seconds(), queue.size());
     }
   }
   #pragma omp parallel for
@@ -248,7 +254,9 @@ int main(int argc, char* argv[]) {
   Builder b(cli);
   Graph g = b.MakeGraph();
   SourcePicker<Graph> sp(g, cli.start_vertex());
-  auto BFSBound = [&sp] (const Graph &g) { return DOBFS(g, sp.PickNext()); };
+  auto BFSBound = [&sp,&cli] (const Graph &g) {
+    return DOBFS(g, sp.PickNext(), cli.logging_en());
+  };
   SourcePicker<Graph> vsp(g, cli.start_vertex());
   auto VerifierBound = [&vsp] (const Graph &g, const pvector<NodeID> &parent) {
     return BFSVerifier(g, vsp.PickNext(), parent);
