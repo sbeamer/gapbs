@@ -247,10 +247,11 @@ class BuilderBase {
       }
       // increase offsets to account for missing inverses, realloc neighs
       SGOffset total_missing_inv = 0;
-      for (NodeID_ n = 0; n <= num_nodes_; n++) {
+      for (NodeID_ n = 0; n < num_nodes_; n++) {
         offsets[n] += total_missing_inv;
         total_missing_inv += invs_needed[n];
       }
+      offsets[num_nodes_] += total_missing_inv;
       size_t newsize = (offsets[num_nodes_] * sizeof(DestID_));
       *neighs = static_cast<DestID_*>(std::realloc(*neighs, newsize));
       if (*neighs == nullptr) {
