@@ -26,10 +26,10 @@ GAP Benchmark Suite
 Class:  BuilderBase
 Author: Scott Beamer
 
-Given arguements from the command line (cli), returns a built graph
- - MakeGraph() will parse cli and obtain edgelist and call
-   MakeGraphFromEL(edgelist) to perform actual graph construction
- - edgelist can be from file (reader) or synthetically generated (generator)
+Given arguments from the command line (cli), returns a built graph
+ - MakeGraph() will parse cli and obtain edgelist to call
+   MakeGraphFromEL(edgelist) to perform the actual graph construction
+ - edgelist can be from file (Reader) or synthetically generated (Generator)
  - Common case: BuilderBase typedef'd (w/ params) to be Builder (benchmark.h)
 */
 
@@ -291,7 +291,7 @@ class BuilderBase {
   }
 
   /*
-  Graph Bulding Steps (for CSR):
+  Graph Building Steps (for CSR):
     - Read edgelist once to determine vertex degrees (CountDegrees)
     - Determine vertex offsets by a prefix sum (ParallelPrefixSum)
     - Allocate storage and set points according to offsets (GenIndex)

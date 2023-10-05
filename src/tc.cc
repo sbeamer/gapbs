@@ -25,9 +25,9 @@ Author: Scott Beamer
 
 Will count the number of triangles (cliques of size 3)
 
-Requires input graph:
-  - to be undirected
-  - no duplicate edges (or else will be counted as multiple triangles)
+Input graph requirements:
+  - undirected
+  - has no duplicate edges (or else will be counted as multiple triangles)
   - neighborhoods are sorted by vertex identifiers
 
 Other than symmetrizing, the rest of the requirements are done by SquishCSR
@@ -38,12 +38,12 @@ once. A naive implementation will count the same triangle six times because
 each of the three vertices (u, v, w) will count it in both ways. To count
 a triangle only once, this implementation only counts a triangle if u > v > w.
 Once the remaining unexamined neighbors identifiers get too big, it can break
-out of the loop, but this requires that the neighbors to be sorted.
+out of the loop, but this requires that the neighbors are sorted.
 
-Another optimization this implementation has is to relabel the vertices by
-degree. This is beneficial if the average degree is high enough and if the
-degree distribution is sufficiently non-uniform. To decide whether or not
-to relabel the graph, we use the heuristic in WorthRelabelling.
+This implementation relabels the vertices by degree. This optimization is
+beneficial if the average degree is sufficiently high and if the degree
+distribution is sufficiently non-uniform. To decide whether to relabel the
+graph, we use the heuristic in WorthRelabelling.
 */
 
 
@@ -71,7 +71,7 @@ size_t OrderedCount(const Graph &g) {
 }
 
 
-// heuristic to see if sufficently dense power-law graph
+// Heuristic to see if sufficiently dense power-law graph
 bool WorthRelabelling(const Graph &g) {
   int64_t average_degree = g.num_edges() / g.num_nodes();
   if (average_degree < 10)
@@ -91,7 +91,7 @@ bool WorthRelabelling(const Graph &g) {
 }
 
 
-// uses heuristic to see if worth relabeling
+// Uses heuristic to see if worth relabeling
 size_t Hybrid(const Graph &g) {
   if (WorthRelabelling(g))
     return OrderedCount(Builder::RelabelByDegree(g));

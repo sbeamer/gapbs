@@ -21,7 +21,7 @@ Will return pagerank scores for all vertices once total change < epsilon
 
 This legacy PR implementation uses the traditional iterative approach. This is
 done to ease comparisons to other implementations (often use same algorithm),
-but it is not necesarily the fastest way to implement it. It performs each
+but it is not necessarily the fastest way to implement it. It performs each
 iteration as a sparse-matrix vector multiply (SpMV), and values are not visible
 until the next iteration (like Jacobi-style method).
 */
@@ -68,7 +68,6 @@ void PrintTopScores(const Graph &g, const pvector<ScoreT> &scores) {
   }
   int k = 5;
   vector<pair<ScoreT, NodeID>> top_k = TopK(score_pairs, k);
-  k = min(k, static_cast<int>(top_k.size()));
   for (auto kvp : top_k)
     cout << kvp.second << ":" << kvp.first << endl;
 }
@@ -79,16 +78,16 @@ void PrintTopScores(const Graph &g, const pvector<ScoreT> &scores) {
 bool PRVerifier(const Graph &g, const pvector<ScoreT> &scores,
                         double target_error) {
   const ScoreT base_score = (1.0f - kDamp) / g.num_nodes();
-  pvector<ScoreT> incomming_sums(g.num_nodes(), 0);
+  pvector<ScoreT> incoming_sums(g.num_nodes(), 0);
   double error = 0;
   for (NodeID u : g.vertices()) {
     ScoreT outgoing_contrib = scores[u] / g.out_degree(u);
     for (NodeID v : g.out_neigh(u))
-      incomming_sums[v] += outgoing_contrib;
+      incoming_sums[v] += outgoing_contrib;
   }
   for (NodeID n : g.vertices()) {
-    error += fabs(base_score + kDamp * incomming_sums[n] - scores[n]);
-    incomming_sums[n] = 0;
+    error += fabs(base_score + kDamp * incoming_sums[n] - scores[n]);
+    incoming_sums[n] = 0;
   }
   PrintTime("Total Error", error);
   return error < target_error;

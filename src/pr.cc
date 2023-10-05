@@ -18,10 +18,10 @@ Author: Scott Beamer
 
 Will return pagerank scores for all vertices once total change < epsilon
 
-This PR implementation uses the traditional iterative approach. It perform
+This PR implementation uses the traditional iterative approach. It performs
 updates in the pull direction to remove the need for atomics, and it allows
 new values to be immediately visible (like Gauss-Seidel method). The prior PR
-implemention is still available in src/pr_spmv.cc.
+implementation is still available in src/pr_spmv.cc.
 */
 
 
@@ -68,7 +68,6 @@ void PrintTopScores(const Graph &g, const pvector<ScoreT> &scores) {
   }
   int k = 5;
   vector<pair<ScoreT, NodeID>> top_k = TopK(score_pairs, k);
-  k = min(k, static_cast<int>(top_k.size()));
   for (auto kvp : top_k)
     cout << kvp.second << ":" << kvp.first << endl;
 }
@@ -79,16 +78,16 @@ void PrintTopScores(const Graph &g, const pvector<ScoreT> &scores) {
 bool PRVerifier(const Graph &g, const pvector<ScoreT> &scores,
                         double target_error) {
   const ScoreT base_score = (1.0f - kDamp) / g.num_nodes();
-  pvector<ScoreT> incomming_sums(g.num_nodes(), 0);
+  pvector<ScoreT> incoming_sums(g.num_nodes(), 0);
   double error = 0;
   for (NodeID u : g.vertices()) {
     ScoreT outgoing_contrib = scores[u] / g.out_degree(u);
     for (NodeID v : g.out_neigh(u))
-      incomming_sums[v] += outgoing_contrib;
+      incoming_sums[v] += outgoing_contrib;
   }
   for (NodeID n : g.vertices()) {
-    error += fabs(base_score + kDamp * incomming_sums[n] - scores[n]);
-    incomming_sums[n] = 0;
+    error += fabs(base_score + kDamp * incoming_sums[n] - scores[n]);
+    incoming_sums[n] = 0;
   }
   PrintTime("Total Error", error);
   return error < target_error;

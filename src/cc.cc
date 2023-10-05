@@ -13,7 +13,6 @@
 #include "command_line.h"
 #include "graph.h"
 #include "pvector.h"
-#include "timer.h"
 
 
 /*
@@ -120,7 +119,7 @@ pvector<NodeID> Afforest(const Graph &g, bool logging_enabled = false,
   // compression, this value represents the largest intermediate component
   NodeID c = SampleFrequentElement(comp, logging_enabled);
 
-  // Final 'link' phase over remaining edges (excluding largest component)
+  // Final 'link' phase over remaining edges (excluding the largest component)
   if (!g.directed()) {
     #pragma omp parallel for schedule(dynamic, 16384)
     for (NodeID u = 0; u < g.num_nodes(); u++) {

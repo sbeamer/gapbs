@@ -7,7 +7,6 @@
 #include "builder.h"
 #include "command_line.h"
 #include "graph.h"
-#include "reader.h"
 #include "writer.h"
 
 using namespace std;

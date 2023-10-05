@@ -41,7 +41,7 @@ class Reader {
   std::string GetSuffix() {
     std::size_t suff_pos = filename_.rfind('.');
     if (suff_pos == std::string::npos) {
-      std::cout << "Could't find suffix of " << filename_ << std::endl;
+      std::cout << "Couldn't find suffix of " << filename_ << std::endl;
       std::exit(-1);
     }
     return filename_.substr(suff_pos);

@@ -13,7 +13,6 @@
 #include "command_line.h"
 #include "graph.h"
 #include "pvector.h"
-#include "timer.h"
 
 
 /*

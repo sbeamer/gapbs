@@ -25,7 +25,7 @@ Author: Scott Beamer
 Will return array of approx betweenness centrality scores for each vertex
 
 This BC implementation makes use of the Brandes [1] algorithm with
-implementation optimizations from Madduri et al. [2]. It is only an approximate
+implementation optimizations from Madduri et al. [2]. It is only approximate
 because it does not compute the paths from every start vertex, but only a small
 subset of them. Additionally, the scores are normalized to the range [0,1].
 
@@ -199,7 +199,7 @@ bool BCVerifier(const Graph &g, SourcePicker<Graph> &sp, NodeID num_iters,
         verts_at_depth[depths[n]].push_back(n);
       }
     }
-    // Going from farthest to clostest, compute "depencies" (deltas)
+    // Going from farthest to closest, compute "dependencies" (deltas)
     pvector<ScoreT> deltas(g.num_nodes(), 0);
     for (int depth=verts_at_depth.size()-1; depth >= 0; depth--) {
       for (NodeID u : verts_at_depth[depth]) {

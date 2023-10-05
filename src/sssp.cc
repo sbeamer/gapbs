@@ -29,7 +29,7 @@ delta parameter (-d) should be set for each input graph. This implementation
 incorporates a new bucket fusion optimization [2] that significantly reduces
 the number of iterations (& barriers) needed.
 
-The bins of width delta are actually all thread-local and of type std::vector
+The bins of width delta are actually all thread-local and of type std::vector,
 so they can grow but are otherwise capacity-proportional. Each iteration is
 done in two phases separated by barriers. In the first phase, the current
 shared bin is processed by all threads. As they find vertices whose distance
@@ -39,7 +39,7 @@ non-empty bin). In the next phase, each thread copies its selected
 thread-local bin into the shared bin.
 
 Once a vertex is added to a bin, it is not removed, even if its distance is
-later updated and it now appears in a lower bin. We find ignoring vertices if
+later updated and, it now appears in a lower bin. We find ignoring vertices if
 their distance is less than the min distance for the current bin removes
 enough redundant work to be faster than removing the vertex from older bins.
 

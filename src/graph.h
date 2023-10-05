@@ -22,7 +22,7 @@ Author: Scott Beamer
 Simple container for graph in CSR format
  - Intended to be constructed by a Builder
  - To make weighted, set DestID_ template type to NodeWeight
- - MakeInverse parameter controls whether graph stores its inverse
+ - MakeInverse parameter controls whether graph stores incoming edges
 */
 
 
@@ -69,7 +69,7 @@ std::istream& operator>>(std::istream& is, NodeWeight<NodeID_, WeightT_>& nw) {
 
 
 
-// Syntatic sugar for an edge
+// Syntactic sugar for an edge
 template <typename SrcT, typename DstT = SrcT>
 struct EdgePair {
   SrcT u;

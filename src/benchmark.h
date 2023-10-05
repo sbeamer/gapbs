@@ -68,7 +68,7 @@ class SourcePicker {
 };
 
 
-// Returns k pairs with largest values from list of key-value pairs
+// Returns k pairs with the largest values from list of key-value pairs
 template<typename KeyT, typename ValT>
 std::vector<std::pair<ValT, KeyT>> TopK(
     const std::vector<std::pair<KeyT, ValT>> &to_sort, size_t k) {

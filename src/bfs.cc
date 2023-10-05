@@ -30,7 +30,7 @@ false-sharing for the top-down approach, thread-local QueueBuffer's are used.
 
 To save time computing the number of edges exiting the frontier, this
 implementation precomputes the degrees in bulk at the beginning by storing
-them in parent array as negative numbers. Thus the encoding of parent is:
+them in the parent array as negative numbers. Thus, the encoding of parent is:
   parent[x] < 0 implies x is unvisited and parent[x] = -out_degree(x)
   parent[x] >= 0 implies x been visited
 
