@@ -7,6 +7,7 @@
 #include <algorithm>
 #include <cassert>
 #include <cinttypes>
+#include <limits>
 #include <random>
 
 #include "graph.h"
@@ -115,19 +116,19 @@ class Generator {
   }
 
   EdgeList MakeRMatEL() {
-    const float A = 0.57f, B = 0.19f, C = 0.19f;
+    const uint32_t max = std::numeric_limits<uint32_t>::max();
+    const uint32_t A = 0.57*max, B = 0.19*max, C = 0.19*max;
     EdgeList el(num_edges_);
     #pragma omp parallel
     {
       std::mt19937 rng;
-      std::uniform_real_distribution<float> udist(0, 1.0f);
       #pragma omp for
       for (int64_t block=0; block < num_edges_; block+=block_size) {
         rng.seed(kRandSeed + block/block_size);
         for (int64_t e=block; e < std::min(block+block_size, num_edges_); e++) {
           NodeID_ src = 0, dst = 0;
           for (int depth=0; depth < scale_; depth++) {
-            float rand_point = udist(rng);
+            uint32_t rand_point = rng();
             src = src << 1;
             dst = dst << 1;
             if (rand_point < A+B) {
