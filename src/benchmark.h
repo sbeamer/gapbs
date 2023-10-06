@@ -47,23 +47,23 @@ template<typename GraphT_>
 class SourcePicker {
  public:
   explicit SourcePicker(const GraphT_ &g, NodeID given_source = -1)
-      : given_source(given_source), rng(kRandSeed), udist(0, g.num_nodes()-1),
-        g_(g) {}
+      : given_source_(given_source), rng_(kRandSeed),
+        udist_(g.num_nodes()-1, rng_), g_(g) {}
 
   NodeID PickNext() {
-    if (given_source != -1)
-      return given_source;
+    if (given_source_ != -1)
+      return given_source_;
     NodeID source;
     do {
-      source = udist(rng);
+      source = udist_();
     } while (g_.out_degree(source) == 0);
     return source;
   }
 
  private:
-  NodeID given_source;
-  std::mt19937 rng;
-  std::uniform_int_distribution<NodeID> udist;
+  NodeID given_source_;
+  std::mt19937 rng_;
+  UniDist udist_;
   const GraphT_ &g_;
 };
 

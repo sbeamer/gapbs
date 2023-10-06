@@ -5,6 +5,7 @@
 #define GENERATOR_H_
 
 #include <algorithm>
+#include <cassert>
 #include <cinttypes>
 #include <random>
 
@@ -26,6 +27,41 @@ Given scale and degree, generates edgelist for synthetic graph
  - Can also randomize weights within a weighted edgelist (InsertWeights)
  - Blocking/reseeding is for parallelism with deterministic output edgelist
 */
+
+
+// maps to range [0,max_value], tailored to std::mt19937
+class UniDist {
+ public:
+  UniDist(uint32_t max_value, std::mt19937 &rng): rng_(rng) {
+    uint64_t rng_range = 1l << 32;
+    assert(rng_.min() == 0);
+    assert(rng_.max() == rng_range - 1);
+    no_mod_ = rng_.max() == max_value;
+    mod_ = max_value + 1;
+    uint64_t remainder = rng_range % mod_;
+    if (remainder == 0)
+      cutoff_ = 0;
+    else
+      cutoff_ = rng_.max() - remainder;
+  }
+
+  uint32_t operator()() {
+    uint32_t rand_num = rng_();
+    if (no_mod_)
+      return rand_num;
+    if (cutoff_ != 0) {
+      while (rand_num >= cutoff_)
+        rand_num = rng_();
+    }
+    return rand_num % mod_;
+  }
+
+ private:
+  std::mt19937 &rng_;
+  bool no_mod_;
+  uint32_t mod_;
+  uint32_t cutoff_;
+};
 
 
 template <typename NodeID_, typename DestID_ = NodeID_,
@@ -66,12 +102,12 @@ class Generator {
     #pragma omp parallel
     {
       std::mt19937 rng;
-      std::uniform_int_distribution<NodeID_> udist(0, num_nodes_-1);
-      #pragma omp for
+      UniDist udist(num_nodes_-1, rng);
+#pragma omp for
       for (int64_t block=0; block < num_edges_; block+=block_size) {
         rng.seed(kRandSeed + block/block_size);
         for (int64_t e=block; e < std::min(block+block_size, num_edges_); e++) {
-          el[e] = Edge(udist(rng), udist(rng));
+          el[e] = Edge(udist(), udist());
         }
       }
     }
@@ -133,13 +169,13 @@ class Generator {
     #pragma omp parallel
     {
       std::mt19937 rng;
-      std::uniform_int_distribution<int> udist(1, 255);
+      UniDist udist(254, rng);
       int64_t el_size = el.size();
       #pragma omp for
       for (int64_t block=0; block < el_size; block+=block_size) {
         rng.seed(kRandSeed + block/block_size);
         for (int64_t e=block; e < std::min(block+block_size, el_size); e++) {
-          el[e].v.w = static_cast<WeightT_>(udist(rng));
+          el[e].v.w = static_cast<WeightT_>(udist()+1);
         }
       }
     }
