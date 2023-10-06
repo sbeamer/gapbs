@@ -12,7 +12,7 @@ Kernels Included
 + PageRank (PR) - iterative method in pull direction
 + Connected Components (CC) - Afforest & Shiloach-Vishkin
 + Betweenness Centrality (BC) - Brandes
-+ Triangle Counting (TC) - Order invariant with possible relabelling
++ Triangle Counting (TC) - order invariant with possible degree relabelling
 
 
 Quick Start
@@ -24,7 +24,7 @@ Build the project:
 
 Override the default C++ compiler:
 
-    $ CXX=g++-8 make
+    $ CXX=g++-13 make
 
 Test the build:
 
