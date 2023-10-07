@@ -31,23 +31,22 @@ Given scale and degree, generates edgelist for synthetic graph
 
 
 // maps to range [0,max_value], tailored to std::mt19937
+template <typename NodeID_, typename rng_t_,
+          typename uNodeID_ = typename std::make_unsigned<NodeID_>::type>
 class UniDist {
  public:
-  UniDist(uint32_t max_value, std::mt19937 &rng): rng_(rng) {
-    uint64_t rng_range = 1l << 32;
-    assert(rng_.min() == 0);
-    assert(rng_.max() == rng_range - 1);
-    no_mod_ = rng_.max() == max_value;
+  UniDist(NodeID_ max_value, rng_t_ &rng): rng_(rng) {
+    no_mod_ = rng_.max() == static_cast<uNodeID_>(max_value);
     mod_ = max_value + 1;
-    uint64_t remainder = rng_range % mod_;
-    if (remainder == 0)
+    uNodeID_ remainder_sub_1 = rng_.max() % mod_;
+    if (remainder_sub_1 == mod_ - 1)
       cutoff_ = 0;
     else
-      cutoff_ = rng_.max() - remainder;
+      cutoff_ = rng_.max() - remainder_sub_1;
   }
 
-  uint32_t operator()() {
-    uint32_t rand_num = rng_();
+  NodeID_ operator()() {
+    uNodeID_ rand_num = rng_();
     if (no_mod_)
       return rand_num;
     if (cutoff_ != 0) {
@@ -58,15 +57,20 @@ class UniDist {
   }
 
  private:
-  std::mt19937 &rng_;
+  rng_t_ &rng_;
   bool no_mod_;
-  uint32_t mod_;
-  uint32_t cutoff_;
+  uNodeID_ mod_;
+  uNodeID_ cutoff_;
 };
 
 
 template <typename NodeID_, typename DestID_ = NodeID_,
-          typename WeightT_ = NodeID_>
+          typename WeightT_ = NodeID_,
+          typename uNodeID_ = typename std::make_unsigned<NodeID_>::type,
+          int uNodeID_bits_ = std::numeric_limits<uNodeID_>::digits,
+          typename rng_t_ = typename std::conditional<(uNodeID_bits_ == 32),
+                                                      std::mt19937,
+                                                      std::mt19937_64>::type >
 class Generator {
   typedef EdgePair<NodeID_, DestID_> Edge;
   typedef EdgePair<NodeID_, NodeWeight<NodeID_, WeightT_>> WEdge;
@@ -102,9 +106,9 @@ class Generator {
     EdgeList el(num_edges_);
     #pragma omp parallel
     {
-      std::mt19937 rng;
-      UniDist udist(num_nodes_-1, rng);
-#pragma omp for
+      rng_t_ rng;
+      UniDist<NodeID_, rng_t_> udist(num_nodes_-1, rng);
+      #pragma omp for
       for (int64_t block=0; block < num_edges_; block+=block_size) {
         rng.seed(kRandSeed + block/block_size);
         for (int64_t e=block; e < std::min(block+block_size, num_edges_); e++) {
@@ -116,19 +120,19 @@ class Generator {
   }
 
   EdgeList MakeRMatEL() {
-    const uint32_t max = std::numeric_limits<uint32_t>::max();
-    const uint32_t A = 0.57*max, B = 0.19*max, C = 0.19*max;
+    const uNodeID_ max = std::numeric_limits<uNodeID_>::max();
+    const uNodeID_ A = 0.57*max, B = 0.19*max, C = 0.19*max;
     EdgeList el(num_edges_);
     #pragma omp parallel
     {
-      std::mt19937 rng;
+      rng_t_ rng;
       #pragma omp for
       for (int64_t block=0; block < num_edges_; block+=block_size) {
         rng.seed(kRandSeed + block/block_size);
         for (int64_t e=block; e < std::min(block+block_size, num_edges_); e++) {
           NodeID_ src = 0, dst = 0;
           for (int depth=0; depth < scale_; depth++) {
-            uint32_t rand_point = rng();
+            uNodeID_ rand_point = rng();
             src = src << 1;
             dst = dst << 1;
             if (rand_point < A+B) {
@@ -169,8 +173,8 @@ class Generator {
   static void InsertWeights(pvector<WEdge> &el) {
     #pragma omp parallel
     {
-      std::mt19937 rng;
-      UniDist udist(254, rng);
+      rng_t_ rng;
+      UniDist<WeightT_, rng_t_> udist(254, rng);
       int64_t el_size = el.size();
       #pragma omp for
       for (int64_t block=0; block < el_size; block+=block_size) {

@@ -62,8 +62,8 @@ class SourcePicker {
 
  private:
   NodeID given_source_;
-  std::mt19937 rng_;
-  UniDist udist_;
+  std::mt19937_64 rng_;
+  UniDist<NodeID, std::mt19937_64> udist_;
   const GraphT_ &g_;
 };
 
