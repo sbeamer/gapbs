@@ -56,8 +56,8 @@ size_t OrderedCount(const Graph &g) {
     for (NodeID v : g.out_neigh(u)) {
       if (v > u)
         break;
-      auto it = g.out_neigh(u).begin();
-      for (NodeID w : g.out_neigh(v)) {
+      auto it = g.out_neigh(v).begin();
+      for (NodeID w : g.out_neigh(u)) {
         if (w > v)
           break;
         while (*it < w)
