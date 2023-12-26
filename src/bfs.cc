@@ -14,7 +14,6 @@
 #include "sliding_queue.h"
 #include "timer.h"
 
-
 /*
 GAP Benchmark Suite
 Kernel: Breadth-First Search (BFS)
@@ -40,18 +39,22 @@ them in the parent array as negative numbers. Thus, the encoding of parent is:
     November 2012.
 */
 
-
 using namespace std;
 
-int64_t BUStep(const Graph &g, pvector<NodeID> &parent, Bitmap &front,
-               Bitmap &next) {
+int64_t
+BUStep(const Graph &g, pvector<NodeID> &parent, Bitmap &front, Bitmap &next)
+{
   int64_t awake_count = 0;
   next.reset();
-  #pragma omp parallel for reduction(+ : awake_count) schedule(dynamic, 1024)
-  for (NodeID u=0; u < g.num_nodes(); u++) {
-    if (parent[u] < 0) {
-      for (NodeID v : g.in_neigh(u)) {
-        if (front.get_bit(v)) {
+#pragma omp parallel for reduction(+ : awake_count) schedule(dynamic, 1024)
+  for (NodeID u = 0; u < g.num_nodes(); u++)
+  {
+    if (parent[u] < 0)
+    {
+      for (NodeID v : g.in_neigh(u))
+      {
+        if (front.get_bit(v))
+        {
           parent[u] = v;
           awake_count++;
           next.set_bit(u);
@@ -63,20 +66,24 @@ int64_t BUStep(const Graph &g, pvector<NodeID> &parent, Bitmap &front,
   return awake_count;
 }
 
-
-int64_t TDStep(const Graph &g, pvector<NodeID> &parent,
-               SlidingQueue<NodeID> &queue) {
+int64_t
+TDStep(const Graph &g, pvector<NodeID> &parent, SlidingQueue<NodeID> &queue)
+{
   int64_t scout_count = 0;
-  #pragma omp parallel
+#pragma omp parallel
   {
     QueueBuffer<NodeID> lqueue(queue);
-    #pragma omp for reduction(+ : scout_count) nowait
-    for (auto q_iter = queue.begin(); q_iter < queue.end(); q_iter++) {
+#pragma omp for reduction(+ : scout_count) nowait
+    for (auto q_iter = queue.begin(); q_iter < queue.end(); q_iter++)
+    {
       NodeID u = *q_iter;
-      for (NodeID v : g.out_neigh(u)) {
+      for (NodeID v : g.out_neigh(u))
+      {
         NodeID curr_val = parent[v];
-        if (curr_val < 0) {
-          if (compare_and_swap(parent[v], curr_val, u)) {
+        if (curr_val < 0)
+        {
+          if (compare_and_swap(parent[v], curr_val, u))
+          {
             lqueue.push_back(v);
             scout_count += -curr_val;
           }
@@ -88,22 +95,25 @@ int64_t TDStep(const Graph &g, pvector<NodeID> &parent,
   return scout_count;
 }
 
-
-void QueueToBitmap(const SlidingQueue<NodeID> &queue, Bitmap &bm) {
-  #pragma omp parallel for
-  for (auto q_iter = queue.begin(); q_iter < queue.end(); q_iter++) {
+void QueueToBitmap(const SlidingQueue<NodeID> &queue, Bitmap &bm)
+{
+#pragma omp parallel for
+  for (auto q_iter = queue.begin(); q_iter < queue.end(); q_iter++)
+  {
     NodeID u = *q_iter;
     bm.set_bit_atomic(u);
   }
 }
 
-void BitmapToQueue(const Graph &g, const Bitmap &bm,
-                   SlidingQueue<NodeID> &queue) {
-  #pragma omp parallel
+void BitmapToQueue(const Graph &g,
+                   const Bitmap &bm,
+                   SlidingQueue<NodeID> &queue)
+{
+#pragma omp parallel
   {
     QueueBuffer<NodeID> lqueue(queue);
-    #pragma omp for nowait
-    for (NodeID n=0; n < g.num_nodes(); n++)
+#pragma omp for nowait
+    for (NodeID n = 0; n < g.num_nodes(); n++)
       if (bm.get_bit(n))
         lqueue.push_back(n);
     lqueue.flush();
@@ -111,16 +121,21 @@ void BitmapToQueue(const Graph &g, const Bitmap &bm,
   queue.slide_window();
 }
 
-pvector<NodeID> InitParent(const Graph &g) {
+pvector<NodeID> InitParent(const Graph &g)
+{
   pvector<NodeID> parent(g.num_nodes());
-  #pragma omp parallel for
-  for (NodeID n=0; n < g.num_nodes(); n++)
+#pragma omp parallel for
+  for (NodeID n = 0; n < g.num_nodes(); n++)
     parent[n] = g.out_degree(n) != 0 ? -g.out_degree(n) : -1;
   return parent;
 }
 
-pvector<NodeID> DOBFS(const Graph &g, NodeID source, bool logging_enabled = false,
-                      int alpha = 15, int beta = 18) {
+pvector<NodeID> DOBFS(const Graph &g,
+                      NodeID source,
+                      bool logging_enabled = false,
+                      int alpha = 15,
+                      int beta = 18)
+{
   if (logging_enabled)
     PrintStep("Source", static_cast<int64_t>(source));
   Timer t;
@@ -139,15 +154,18 @@ pvector<NodeID> DOBFS(const Graph &g, NodeID source, bool logging_enabled = fals
   front.reset();
   int64_t edges_to_check = g.num_edges_directed();
   int64_t scout_count = g.out_degree(source);
-  while (!queue.empty()) {
-    if (scout_count > edges_to_check / alpha) {
+  while (!queue.empty())
+  {
+    if (scout_count > edges_to_check / alpha)
+    {
       int64_t awake_count, old_awake_count;
       TIME_OP(t, QueueToBitmap(queue, front));
       if (logging_enabled)
         PrintStep("e", t.Seconds());
       awake_count = queue.size();
       queue.slide_window();
-      do {
+      do
+      {
         t.Start();
         old_awake_count = awake_count;
         awake_count = BUStep(g, parent, front, curr);
@@ -161,7 +179,9 @@ pvector<NodeID> DOBFS(const Graph &g, NodeID source, bool logging_enabled = fals
       if (logging_enabled)
         PrintStep("c", t.Seconds());
       scout_count = 1;
-    } else {
+    }
+    else
+    {
       t.Start();
       edges_to_check -= scout_count;
       scout_count = TDStep(g, parent, queue);
@@ -171,19 +191,21 @@ pvector<NodeID> DOBFS(const Graph &g, NodeID source, bool logging_enabled = fals
         PrintStep("td", t.Seconds(), queue.size());
     }
   }
-  #pragma omp parallel for
+#pragma omp parallel for
   for (NodeID n = 0; n < g.num_nodes(); n++)
     if (parent[n] < -1)
       parent[n] = -1;
   return parent;
 }
 
-
-void PrintBFSStats(const Graph &g, const pvector<NodeID> &bfs_tree) {
+void PrintBFSStats(const Graph &g, const pvector<NodeID> &bfs_tree)
+{
   int64_t tree_size = 0;
   int64_t n_edges = 0;
-  for (NodeID n : g.vertices()) {
-    if (bfs_tree[n] >= 0) {
+  for (NodeID n : g.vertices())
+  {
+    if (bfs_tree[n] >= 0)
+    {
       n_edges += g.out_degree(n);
       tree_size++;
     }
@@ -192,41 +214,50 @@ void PrintBFSStats(const Graph &g, const pvector<NodeID> &bfs_tree) {
   cout << n_edges << " edges" << endl;
 }
 
-
 // BFS verifier does a serial BFS from same source and asserts:
 // - parent[source] = source
 // - parent[v] = u  =>  depth[v] = depth[u] + 1 (except for source)
 // - parent[v] = u  => there is edge from u to v
 // - all vertices reachable from source have a parent
-bool BFSVerifier(const Graph &g, NodeID source,
-                 const pvector<NodeID> &parent) {
+bool BFSVerifier(const Graph &g, NodeID source, const pvector<NodeID> &parent)
+{
   pvector<int> depth(g.num_nodes(), -1);
   depth[source] = 0;
   vector<NodeID> to_visit;
   to_visit.reserve(g.num_nodes());
   to_visit.push_back(source);
-  for (auto it = to_visit.begin(); it != to_visit.end(); it++) {
+  for (auto it = to_visit.begin(); it != to_visit.end(); it++)
+  {
     NodeID u = *it;
-    for (NodeID v : g.out_neigh(u)) {
-      if (depth[v] == -1) {
+    for (NodeID v : g.out_neigh(u))
+    {
+      if (depth[v] == -1)
+      {
         depth[v] = depth[u] + 1;
         to_visit.push_back(v);
       }
     }
   }
-  for (NodeID u : g.vertices()) {
-    if ((depth[u] != -1) && (parent[u] != -1)) {
-      if (u == source) {
-        if (!((parent[u] == u) && (depth[u] == 0))) {
+  for (NodeID u : g.vertices())
+  {
+    if ((depth[u] != -1) && (parent[u] != -1))
+    {
+      if (u == source)
+      {
+        if (!((parent[u] == u) && (depth[u] == 0)))
+        {
           cout << "Source wrong" << endl;
           return false;
         }
         continue;
       }
       bool parent_found = false;
-      for (NodeID v : g.in_neigh(u)) {
-        if (v == parent[u]) {
-          if (depth[v] != depth[u] - 1) {
+      for (NodeID v : g.in_neigh(u))
+      {
+        if (v == parent[u])
+        {
+          if (depth[v] != depth[u] - 1)
+          {
             cout << "Wrong depths for " << u << " & " << v << endl;
             return false;
           }
@@ -234,11 +265,14 @@ bool BFSVerifier(const Graph &g, NodeID source,
           break;
         }
       }
-      if (!parent_found) {
+      if (!parent_found)
+      {
         cout << "Couldn't find edge from " << parent[u] << " to " << u << endl;
         return false;
       }
-    } else if (depth[u] != parent[u]) {
+    }
+    else if (depth[u] != parent[u])
+    {
       cout << "Reachability mismatch" << endl;
       return false;
     }
@@ -246,21 +280,95 @@ bool BFSVerifier(const Graph &g, NodeID source,
   return true;
 }
 
+// int main(int argc, char *argv[])
+// {
+//   CLApp cli(argc, argv, "breadth-first search");
+//   if (!cli.ParseArgs())
+//     return -1;
+//   Builder b(cli);
+//   Graph g = b.MakeGraph();
+//   SourcePicker<Graph> sp(g, cli.start_vertex());
+//   auto BFSBound = [&sp, &cli](const Graph &g)
+//   {
+//     return DOBFS(g, sp.PickNext(), cli.logging_en());
+//   };
+//   SourcePicker<Graph> vsp(g, cli.start_vertex());
+//   auto VerifierBound = [&vsp](const Graph &g, const pvector<NodeID> &parent)
+//   {
+//     return BFSVerifier(g, vsp.PickNext(), parent);
+//   };
+//   BenchmarkKernel(cli, g, BFSBound, PrintBFSStats, VerifierBound);
+//   return 0;
+// }
 
-int main(int argc, char* argv[]) {
+void readList(std::string &input_path, std::vector<int> &sourceList)
+{
+  std::ifstream file(input_path);
+  std::string line;
+  int source;
+  int i = 0;
+  while (std::getline(file, line))
+  {
+    if (line[0] == '%')
+      continue;
+    std::stringstream ss(line);
+    ss >> source;
+    sourceList.push_back(source);
+    i++;
+  }
+  file.close();
+}
+
+// all-pairs BFS
+int aBFS(int argc, char *argv[])
+{
   CLApp cli(argc, argv, "breadth-first search");
   if (!cli.ParseArgs())
     return -1;
   Builder b(cli);
   Graph g = b.MakeGraph();
-  SourcePicker<Graph> sp(g, cli.start_vertex());
-  auto BFSBound = [&sp,&cli] (const Graph &g) {
-    return DOBFS(g, sp.PickNext(), cli.logging_en());
-  };
-  SourcePicker<Graph> vsp(g, cli.start_vertex());
-  auto VerifierBound = [&vsp] (const Graph &g, const pvector<NodeID> &parent) {
-    return BFSVerifier(g, vsp.PickNext(), parent);
-  };
-  BenchmarkKernel(cli, g, BFSBound, PrintBFSStats, VerifierBound);
+  float elapsed_time = 0.0f;
+  for (auto i = 0; i < g.num_nodes(); ++i)
+  {
+    SourcePicker<Graph> sp(g, i);
+    auto BFSBound = [&sp, &cli](const Graph &g)
+    {
+      return DOBFS(g, sp.PickNext(), cli.logging_en());
+    };
+    elapsed_time += BenchmarkKernel(cli, g, BFSBound);
+  }
+  PrintTime("Average Time", elapsed_time);
+  return 0;
+}
+
+// multi-sources BFS
+int mBFS(int argc, char *argv[])
+{
+  CLApp cli(argc, argv, "breadth-first search");
+  if (!cli.ParseArgs())
+    return -1;
+  Builder b(cli);
+  Graph g = b.MakeGraph();
+  string filepath = cli.input_node_list_address();
+  std::vector<int> sourceList;
+  readList(filepath, sourceList);
+  float elapsed_time = 0.0f;
+
+  for (auto i = 0; i < (int)sourceList.size(); ++i)
+  {
+    SourcePicker<Graph> sp(g, (sourceList[i] % g.num_nodes()));
+    auto BFSBound = [&sp, &cli](const Graph &g)
+    {
+      return DOBFS(g, sp.PickNext(), cli.logging_en());
+    };
+    elapsed_time += BenchmarkKernel(cli, g, BFSBound);
+  }
+  PrintTime("Average Time", elapsed_time);
+  return 0;
+}
+
+int main(int argc, char *argv[])
+{
+  aBFS(argc, argv);
   return 0;
 }
