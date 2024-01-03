@@ -30,7 +30,7 @@ Given scale and degree, generates edgelist for synthetic graph
 */
 
 
-// maps to range [0,max_value], tailored to std::mt19937
+// maps to range [0,max_value], tailored to STL-style RNG
 template <typename NodeID_, typename rng_t_,
           typename uNodeID_ = typename std::make_unsigned<NodeID_>::type>
 class UniDist {
@@ -92,7 +92,7 @@ class Generator {
 
   void PermuteIDs(EdgeList &el) {
     pvector<NodeID_> permutation(num_nodes_);
-    std::mt19937 rng(kRandSeed);
+    rng_t_ rng(kRandSeed);
     #pragma omp parallel for
     for (NodeID_ n=0; n < num_nodes_; n++)
       permutation[n] = n;
@@ -120,19 +120,19 @@ class Generator {
   }
 
   EdgeList MakeRMatEL() {
-    const uNodeID_ max = std::numeric_limits<uNodeID_>::max();
-    const uNodeID_ A = 0.57*max, B = 0.19*max, C = 0.19*max;
+    const uint32_t max = std::numeric_limits<uint32_t>::max();
+    const uint32_t A = 0.57*max, B = 0.19*max, C = 0.19*max;
     EdgeList el(num_edges_);
     #pragma omp parallel
     {
-      rng_t_ rng;
+      std::mt19937 rng;
       #pragma omp for
       for (int64_t block=0; block < num_edges_; block+=block_size) {
         rng.seed(kRandSeed + block/block_size);
         for (int64_t e=block; e < std::min(block+block_size, num_edges_); e++) {
           NodeID_ src = 0, dst = 0;
           for (int depth=0; depth < scale_; depth++) {
-            uNodeID_ rand_point = rng();
+            uint32_t rand_point = rng();
             src = src << 1;
             dst = dst << 1;
             if (rand_point < A+B) {
