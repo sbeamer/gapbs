@@ -9,7 +9,7 @@ Kernels Included
 ----------------
 + Breadth-First Search (BFS) - direction optimizing
 + Single-Source Shortest Paths (SSSP) - delta stepping
-+ PageRank (PR) - iterative method in pull direction
++ PageRank (PR) - iterative method in pull direction, Gauss-Seidel or Jacobi
 + Connected Components (CC) - Afforest & Shiloach-Vishkin
 + Betweenness Centrality (BC) - Brandes
 + Triangle Counting (TC) - order invariant with possible degree relabelling
@@ -83,4 +83,15 @@ How to Cite
 
 Please cite this code by the benchmark specification:
 
-Scott Beamer, Krste Asanović, David Patterson. [*The GAP Benchmark Suite*](http://arxiv.org/abs/1508.03619). arXiv:1508.03619 [cs.DC], 2015.
+> Scott Beamer, Krste Asanović, David Patterson. [*The GAP Benchmark Suite*](http://arxiv.org/abs/1508.03619). arXiv:1508.03619 [cs.DC], 2015.
+
+
+To Learn More
+-------------
+The [specification](http://arxiv.org/abs/1508.03619) (above) provides the most detailed description of the benchmark and the reference implementation. The benchmark kernels were selected by a thorough methodology including an extensive literature search [2] and a detailed workload characterization [3]. In 2020, the leading shared-memory graph frameworks competed accoring to the GAP Benchmark specifications [1].
+
+1. Ariful Azad, Mohsen Mahmoudi Aznaveh, Scott Beamer, et al. [*Evaluation of Graph Analytics Frameworks Using the GAP Benchmark Suite*](https://ieeexplore.ieee.org/document/9251247). International Symposium on Workload Characterization (IISWC), October 2020.
+
+2. Scott Beamer. [*Understanding and Improving Graph Algorithm Performance*](https://www2.eecs.berkeley.edu/Pubs/TechRpts/2016/EECS-2016-153.html). PhD Thesis, University of California Berkeley, September 2016. _SPEC Kaivalya Dixit Distinguished Dissertation Award_.
+
+3. Scott Beamer, Krste Asanović, David Patterson. [*Locality Exists in Graph Processing: Workload Characterization on an Ivy Bridge Server*](https://ieeexplore.ieee.org/document/7314147). International Symposium on Workload Characterization (IISWC), October 2015. _Best Paper Award_.
