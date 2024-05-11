@@ -1,3 +1,5 @@
+![GAP logo](https://scottbeamer.net/images/gap-logo-horiz.svg)
+
 GAP Benchmark Suite [![Build Status](https://github.com/sbeamer/gapbs/actions/workflows/c-cpp.yml/badge.svg)](https://github.com/sbeamer/gapbs/actions/workflows/c-cpp.yml)
 ===================
 
