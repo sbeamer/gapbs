@@ -11,7 +11,7 @@ Kernels Included
 ----------------
 + Breadth-First Search (BFS) - direction optimizing
 + Single-Source Shortest Paths (SSSP) - delta stepping
-+ PageRank (PR) - iterative method in pull direction, Gauss-Seidel or Jacobi
++ PageRank (PR) - iterative method in pull direction, Gauss-Seidel & Jacobi
 + Connected Components (CC) - Afforest & Shiloach-Vishkin
 + Betweenness Centrality (BC) - Brandes
 + Triangle Counting (TC) - order invariant with possible degree relabelling
@@ -90,7 +90,7 @@ Please cite this code by the benchmark specification:
 
 To Learn More
 -------------
-The [specification](http://arxiv.org/abs/1508.03619) (above) provides the most detailed description of the benchmark and the reference implementation. The benchmark kernels were selected by a thorough methodology including an extensive literature search [2] and a detailed workload characterization [3]. In 2020, the leading shared-memory graph frameworks competed accoring to the GAP Benchmark specifications [1].
+The [specification](http://arxiv.org/abs/1508.03619) (above) provides the most detailed description of the benchmark and the reference implementation. The benchmark kernels were selected by a thorough methodology including an extensive literature search [2] and a detailed workload characterization [3]. In 2020, the leading shared-memory graph frameworks competed according to the GAP Benchmark specifications [1].
 
 1. Ariful Azad, Mohsen Mahmoudi Aznaveh, Scott Beamer, et al. [*Evaluation of Graph Analytics Frameworks Using the GAP Benchmark Suite*](https://ieeexplore.ieee.org/document/9251247). International Symposium on Workload Characterization (IISWC), October 2020.
 
